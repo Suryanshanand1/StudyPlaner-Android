@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { Sun, Moon, Monitor, Palette, Download, Upload, CheckCircle } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { Sun, Moon, Monitor, Palette, Download, Upload, CheckCircle, Bell, BellOff } from "lucide-react"
 import { useTheme, ACCENT_PRESETS } from "@/hooks/theme"
 import { useStore } from "@/lib/store"
+import { requestNotificationPermission, getPermissionStatus } from "@/lib/notifications"
 
 const THEME_OPTIONS = [
   { value: "light" as const, label: "Light", icon: Sun },
@@ -16,7 +17,13 @@ export default function Settings() {
   const { exportData, importData } = useStore()
   const [showCustom, setShowCustom] = useState(false)
   const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle")
+  const [notifStatus, setNotifStatus] = useState<"granted" | "denied" | "prompt">("prompt")
+  const [requesting, setRequesting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    getPermissionStatus().then(setNotifStatus)
+  }, [])
 
   const handleExport = () => {
     const json = exportData()
@@ -128,6 +135,42 @@ export default function Settings() {
           </span>
           <span className="text-xs text-accent font-medium">Preview Link</span>
         </div>
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-center gap-2">
+          <Bell size={16} className="text-zinc-400" />
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            Notifications
+          </h3>
+        </div>
+        <p className="mb-3 text-xs text-zinc-400 dark:text-zinc-500">Get reminded when it&apos;s time to study</p>
+        <button
+          onClick={async () => {
+            setRequesting(true)
+            const ok = await requestNotificationPermission()
+            setNotifStatus(ok ? "granted" : "denied")
+            setRequesting(false)
+          }}
+          disabled={requesting || notifStatus === "granted"}
+          className={`flex w-full items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition ${
+            notifStatus === "granted"
+              ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950"
+              : notifStatus === "denied"
+              ? "border-red-500 bg-red-50 text-red-700 dark:bg-red-950"
+              : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600"
+          }`}
+        >
+          {requesting ? (
+            "Requesting..."
+          ) : notifStatus === "granted" ? (
+            <><Bell size={18} /> Notifications Enabled</>
+          ) : notifStatus === "denied" ? (
+            <><BellOff size={18} /> Notifications Denied</>
+          ) : (
+            <><Bell size={18} /> Enable Notifications</>
+          )}
+        </button>
       </div>
 
       <div>
