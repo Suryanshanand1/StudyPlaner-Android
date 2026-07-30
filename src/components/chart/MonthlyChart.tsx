@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { ChevronLeft, ChevronRight, TrendingUp, BookOpen, Clock } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { getMonthName } from "@/lib/utils"
-import { useTheme } from "@/lib/theme"
+import { useTheme } from "@/hooks/theme"
 
 export default function MonthlyChart() {
   const now = new Date()

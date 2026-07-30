@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react"
 import { Sun, Moon, Monitor, Palette, Download, Upload, CheckCircle } from "lucide-react"
-import { useTheme, ACCENT_PRESETS } from "@/lib/theme"
+import { useTheme, ACCENT_PRESETS } from "@/hooks/theme"
 import { useStore } from "@/lib/store"
 
 const THEME_OPTIONS = [

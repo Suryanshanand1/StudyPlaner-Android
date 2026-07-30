@@ -76,13 +76,21 @@ src/
 │   ├── layout.tsx         # Root layout with providers
 │   └── page.tsx           # Main app with tab navigation
 ├── components/
-│   ├── ChapterForm.tsx     # Add chapter modal
-│   ├── MonthlyChart.tsx    # Recharts dashboard
-│   ├── NotificationManager.tsx  # Notification checker
-│   ├── PlanForm.tsx        # Create study plan modal
-│   ├── StudyPlanner.tsx    # Day/week schedule view
-│   ├── SubjectCard.tsx     # Subject with chapters & progress
-│   └── SubjectForm.tsx     # Add/edit subject modal
+│   ├── chart/
+│   │   └── MonthlyChart.tsx    # Recharts dashboard
+│   ├── planner/
+│   │   ├── PlanForm.tsx        # Create study plan modal
+│   │   └── StudyPlanner.tsx    # Day/week schedule view
+│   ├── settings/
+│   │   └── Settings.tsx        # Theme + data settings
+│   ├── subjects/
+│   │   ├── ChapterForm.tsx     # Add chapter modal
+│   │   ├── SubjectCard.tsx     # Subject with chapters & progress
+│   │   └── SubjectForm.tsx     # Add/edit subject modal
+│   ├── Dashboard.tsx           # Home dashboard summary
+│   └── NotificationManager.tsx # Notification checker
+├── hooks/
+│   └── theme.tsx          # Theme context + accent color
 └── lib/
     ├── notifications.ts   # Web Notification helpers
     ├── store.tsx          # React Context + LocalStorage state
