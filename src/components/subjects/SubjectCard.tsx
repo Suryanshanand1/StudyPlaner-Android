@@ -1,10 +1,12 @@
 "use client"
 
-import { useMemo, useState, useRef } from "react"
-import { Plus, Trash2, CheckCircle, Circle, Pencil, GripVertical } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Plus, Trash2, CheckCircle, Circle, Pencil, GripVertical, ChevronDown, ChevronUp } from "lucide-react"
 import type { Subject, Chapter } from "@/lib/types"
 import { useStore } from "@/lib/store"
 import ChapterForm from "./ChapterForm"
+
+const COLLAPSE_AFTER = 5
 
 export default function SubjectCard({
   subject,
@@ -19,12 +21,20 @@ export default function SubjectCard({
   const [showForm, setShowForm] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState(false)
   const percent = getCompletionPercent(subject.id)
 
   const sorted = useMemo(
     () => [...chapters].sort((a, b) => a.order - b.order),
     [chapters],
   )
+
+  const visible = useMemo(
+    () => expanded ? sorted : sorted.slice(0, COLLAPSE_AFTER),
+    [sorted, expanded],
+  )
+
+  const hiddenCount = sorted.length - COLLAPSE_AFTER
 
   return (
     <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -60,7 +70,7 @@ export default function SubjectCard({
       </div>
 
       <div className="space-y-0.5">
-        {sorted.map((ch, idx) => (
+        {visible.map((ch, idx) => (
           <div
             key={ch.id}
             draggable
@@ -84,7 +94,7 @@ export default function SubjectCard({
             }`}
           >
             <div className="flex min-w-0 flex-1 items-center gap-1.5">
-              <div className="cursor-grab touch-none text-zinc-300 dark:text-zinc-600" onMouseDown={(e) => e.currentTarget.closest<HTMLDivElement>("[draggable]")?.setAttribute("draggable", "true")}>
+              <div className="cursor-grab touch-none text-zinc-300 dark:text-zinc-600">
                 <GripVertical size={16} />
               </div>
               <button onClick={() => toggleChapter(ch.id)} className="shrink-0">
@@ -107,6 +117,19 @@ export default function SubjectCard({
           </div>
         ))}
       </div>
+
+      {sorted.length > COLLAPSE_AFTER && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg py-2 text-xs font-medium text-zinc-500 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800/60"
+        >
+          {expanded ? (
+            <><ChevronUp size={16} /> Show less</>
+          ) : (
+            <><ChevronDown size={16} /> Show {hiddenCount} more chapter{hiddenCount > 1 ? "s" : ""}</>
+          )}
+        </button>
+      )}
 
       <button
         onClick={() => setShowForm(true)}

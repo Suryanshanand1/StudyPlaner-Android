@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def keystoreProps = new Properties()
+def keystoreFile = rootProject.file('../keystore.properties')
+if (keystoreFile.exists()) {
+    keystoreProps.load(new FileInputStream(keystoreFile))
+}
+
 android {
     namespace = "com.studyplanner.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +22,22 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            storeFile file(keystoreProps.getProperty("storeFile", ""))
+            storePassword keystoreProps.getProperty("storePassword", "")
+            keyAlias keystoreProps.getProperty("keyAlias", "")
+            keyPassword keystoreProps.getProperty("keyPassword", "")
+        }
+    }
     buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     applicationVariants.all { variant ->

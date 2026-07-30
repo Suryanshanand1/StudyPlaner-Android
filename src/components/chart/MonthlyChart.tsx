@@ -86,7 +86,7 @@ export default function MonthlyChart() {
               formatter={(value) => [`${value}`, ""]}
             />
             <Legend wrapperStyle={{ fontSize: 11, color: tickColor }} />
-            <Bar dataKey="hours" name="Hours" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={20} />
+            <Bar dataKey="hours" name="Hours" fill="#3b82f6" stroke="none" radius={[4, 4, 0, 0]} maxBarSize={20} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -103,7 +103,7 @@ export default function MonthlyChart() {
               formatter={(value) => [`${value}`, ""]}
             />
             <Legend wrapperStyle={{ fontSize: 11, color: tickColor }} />
-            <Bar dataKey="chapters" name="Chapters" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={20} />
+            <Bar dataKey="chapters" name="Chapters" fill="#10b981" stroke="none" radius={[4, 4, 0, 0]} maxBarSize={20} />
           </BarChart>
         </ResponsiveContainer>
       </div>
