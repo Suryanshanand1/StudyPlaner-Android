@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, useRef } from "react"
-import { Plus, Trash2, CheckCircle, Circle, Pencil, GripVertical } from "lucide-react"
+import { Plus, Trash2, CheckCircle, Circle, Pencil, GripVertical, ChevronDown, ChevronRight } from "lucide-react"
 import type { Subject, Chapter } from "@/lib/types"
 import { useStore } from "@/lib/store"
 import ChapterForm from "./ChapterForm"
@@ -16,6 +16,7 @@ export default function SubjectCard({
   onEdit: () => void
 }) {
   const { addChapter, toggleChapter, deleteChapter, deleteSubject, getCompletionPercent, reorderChapter } = useStore()
+  const [collapsed, setCollapsed] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
@@ -32,6 +33,9 @@ export default function SubjectCard({
         <div className="flex items-center gap-3">
           <div className="h-4 w-4 rounded-full" style={{ backgroundColor: subject.color }} />
           <h3 className="font-semibold text-zinc-800 dark:text-zinc-200">{subject.name}</h3>
+          <button onClick={() => setCollapsed(!collapsed)} className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300">
+            {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+          </button>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={onEdit} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300">
@@ -59,54 +63,62 @@ export default function SubjectCard({
         </div>
       </div>
 
-      <div className="space-y-0.5">
-        {sorted.map((ch, idx) => (
-          <div
-            key={ch.id}
-            draggable
-            onDragStart={() => setDragId(ch.id)}
-            onDragEnd={() => { setDragId(null); setDragOverId(null) }}
-            onDragOver={(e) => {
-              e.preventDefault()
-              setDragOverId(ch.id)
-            }}
-            onDragLeave={() => setDragOverId(null)}
-            onDrop={(e) => {
-              e.preventDefault()
-              if (dragId && dragId !== ch.id) {
-                reorderChapter(dragId, subject.id, idx)
-              }
-              setDragId(null)
-              setDragOverId(null)
-            }}
-            className={`flex items-center justify-between rounded-lg px-1 py-1.5 transition ${
-              dragOverId === ch.id ? "bg-zinc-100 dark:bg-zinc-700" : dragId === ch.id ? "opacity-50" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-            }`}
-          >
-            <div className="flex min-w-0 flex-1 items-center gap-1.5">
-              <div className="cursor-grab touch-none text-zinc-300 dark:text-zinc-600" onMouseDown={(e) => e.currentTarget.closest<HTMLDivElement>("[draggable]")?.setAttribute("draggable", "true")}>
-                <GripVertical size={16} />
-              </div>
-              <button onClick={() => toggleChapter(ch.id)} className="shrink-0">
-                {ch.completed ? (
-                  <CheckCircle size={18} className="text-green-500" />
-                ) : (
-                  <Circle size={18} className="text-zinc-300 dark:text-zinc-600" />
-                )}
-              </button>
-              <span className={`truncate text-sm ${ch.completed ? "text-zinc-400 line-through dark:text-zinc-500" : "text-zinc-700 dark:text-zinc-300"}`}>
-                {ch.name}
-              </span>
-            </div>
-            <button
-              onClick={() => deleteChapter(ch.id)}
-              className="shrink-0 rounded p-1 text-zinc-300 hover:bg-red-50 hover:text-red-500 dark:text-zinc-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
-            >
-              <Trash2 size={14} />
-            </button>
+      {collapsed ? (
+        sorted.length > 0 && (
+          <div className="mb-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-500 dark:bg-zinc-800/60 dark:text-zinc-400">
+            {sorted.filter((ch) => ch.completed).length}/{sorted.length} chapters completed
           </div>
-        ))}
-      </div>
+        )
+      ) : (
+        <div className="space-y-0.5">
+          {sorted.map((ch, idx) => (
+            <div
+              key={ch.id}
+              draggable
+              onDragStart={() => setDragId(ch.id)}
+              onDragEnd={() => { setDragId(null); setDragOverId(null) }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setDragOverId(ch.id)
+              }}
+              onDragLeave={() => setDragOverId(null)}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (dragId && dragId !== ch.id) {
+                  reorderChapter(dragId, subject.id, idx)
+                }
+                setDragId(null)
+                setDragOverId(null)
+              }}
+              className={`flex items-center justify-between rounded-lg px-1 py-1.5 transition ${
+                dragOverId === ch.id ? "bg-zinc-100 dark:bg-zinc-700" : dragId === ch.id ? "opacity-50" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+              }`}
+            >
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                <div className="cursor-grab touch-none text-zinc-300 dark:text-zinc-600" onMouseDown={(e) => e.currentTarget.closest<HTMLDivElement>("[draggable]")?.setAttribute("draggable", "true")}>
+                  <GripVertical size={16} />
+                </div>
+                <button onClick={() => toggleChapter(ch.id)} className="shrink-0">
+                  {ch.completed ? (
+                    <CheckCircle size={18} className="text-green-500" />
+                  ) : (
+                    <Circle size={18} className="text-zinc-300 dark:text-zinc-600" />
+                  )}
+                </button>
+                <span className={`truncate text-sm ${ch.completed ? "text-zinc-400 line-through dark:text-zinc-500" : "text-zinc-700 dark:text-zinc-300"}`}>
+                  {ch.name}
+                </span>
+              </div>
+              <button
+                onClick={() => deleteChapter(ch.id)}
+                className="shrink-0 rounded p-1 text-zinc-300 hover:bg-red-50 hover:text-red-500 dark:text-zinc-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <button
         onClick={() => setShowForm(true)}
