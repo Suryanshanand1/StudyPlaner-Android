@@ -2,9 +2,15 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Sun, Moon, Monitor, Palette, Download, Upload, CheckCircle, Bell, BellOff } from "lucide-react"
+import { Filesystem, Directory, Encoding } from "@capacitor/filesystem"
+import { Share } from "@capacitor/share"
 import { useTheme, ACCENT_PRESETS } from "@/hooks/theme"
 import { useStore } from "@/lib/store"
 import { requestNotificationPermission, getPermissionStatus } from "@/lib/notifications"
+
+function isNative(): boolean {
+  return typeof window !== "undefined" && !!(window as any).Capacitor?.isNativePlatform
+}
 
 const THEME_OPTIONS = [
   { value: "light" as const, label: "Light", icon: Sun },
@@ -17,6 +23,7 @@ export default function Settings() {
   const { exportData, importData } = useStore()
   const [showCustom, setShowCustom] = useState(false)
   const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle")
+  const [exportStatus, setExportStatus] = useState<"idle" | "success" | "error">("idle")
   const [notifStatus, setNotifStatus] = useState<"granted" | "denied" | "prompt">("prompt")
   const [requesting, setRequesting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -25,15 +32,43 @@ export default function Settings() {
     getPermissionStatus().then(setNotifStatus)
   }, [])
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const json = exportData()
-    const blob = new Blob([json], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `study-planner-backup.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    try {
+      if (isNative()) {
+        await Filesystem.writeFile({
+          path: "study-planner-backup.json",
+          data: json,
+          directory: Directory.Documents,
+          encoding: Encoding.UTF8,
+        })
+        const result = await Filesystem.getUri({
+          path: "study-planner-backup.json",
+          directory: Directory.Documents,
+        })
+        await Share.share({
+          title: "Study Planner Backup",
+          text: "Study Planner data backup",
+          files: [result.uri],
+          dialogTitle: "Save or share backup",
+        })
+      } else {
+        const blob = new Blob([json], { type: "application/json" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `study-planner-backup.json`
+        a.rel = "noopener"
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+      }
+      setExportStatus("success")
+    } catch {
+      setExportStatus("error")
+    }
+    setTimeout(() => setExportStatus("idle"), 2000)
   }
 
   const handleImport = () => {
@@ -184,10 +219,16 @@ export default function Settings() {
         <div className="flex gap-2">
           <button
             onClick={handleExport}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600"
+            className={`flex flex-1 items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition ${
+              exportStatus === "success"
+                ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950"
+                : exportStatus === "error"
+                ? "border-red-500 bg-red-50 text-red-700 dark:bg-red-950"
+                : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600"
+            }`}
           >
-            <Download size={18} />
-            Export
+            {exportStatus === "success" ? <CheckCircle size={18} /> : <Download size={18} />}
+            {exportStatus === "success" ? "Exported!" : exportStatus === "error" ? "Export failed" : "Export"}
           </button>
           <button
             onClick={handleImport}

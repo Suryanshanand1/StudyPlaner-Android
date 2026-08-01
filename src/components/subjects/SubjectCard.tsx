@@ -1,12 +1,10 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Plus, Trash2, CheckCircle, Circle, Pencil, GripVertical, ChevronDown, ChevronUp } from "lucide-react"
+import { Plus, Trash2, CheckCircle, Circle, Pencil, GripVertical, ChevronDown, ChevronRight } from "lucide-react"
 import type { Subject, Chapter } from "@/lib/types"
 import { useStore } from "@/lib/store"
 import ChapterForm from "./ChapterForm"
-
-const COLLAPSE_AFTER = 5
 
 export default function SubjectCard({
   subject,
@@ -21,20 +19,13 @@ export default function SubjectCard({
   const [showForm, setShowForm] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const percent = getCompletionPercent(subject.id)
 
   const sorted = useMemo(
     () => [...chapters].sort((a, b) => a.order - b.order),
     [chapters],
   )
-
-  const visible = useMemo(
-    () => expanded ? sorted : sorted.slice(0, COLLAPSE_AFTER),
-    [sorted, expanded],
-  )
-
-  const hiddenCount = sorted.length - COLLAPSE_AFTER
 
   return (
     <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -44,6 +35,13 @@ export default function SubjectCard({
           <h3 className="font-semibold text-zinc-800 dark:text-zinc-200">{subject.name}</h3>
         </div>
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? "Expand chapters" : "Collapse chapters"}
+            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+          </button>
           <button onClick={onEdit} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300">
             <Pencil size={16} />
           </button>
@@ -56,21 +54,24 @@ export default function SubjectCard({
         </div>
       </div>
 
-      <div className="mb-3">
-        <div className="mb-1 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-          <span>Progress</span>
-          <span>{percent}%</span>
+      {!collapsed && (
+        <div className="mb-3">
+          <div className="mb-1 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+            <span>Progress</span>
+            <span>{percent}%</span>
+          </div>
+          <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
+            <div
+              className="h-2 rounded-full transition-all"
+              style={{ width: `${percent}%`, backgroundColor: subject.color }}
+            />
+          </div>
         </div>
-        <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
-          <div
-            className="h-2 rounded-full transition-all"
-            style={{ width: `${percent}%`, backgroundColor: subject.color }}
-          />
-        </div>
-      </div>
+      )}
 
+      {!collapsed && (
       <div className="space-y-0.5">
-        {visible.map((ch, idx) => (
+        {sorted.map((ch, idx) => (
           <div
             key={ch.id}
             draggable
@@ -117,27 +118,17 @@ export default function SubjectCard({
           </div>
         ))}
       </div>
-
-      {sorted.length > COLLAPSE_AFTER && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg py-2 text-xs font-medium text-zinc-500 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800/60"
-        >
-          {expanded ? (
-            <><ChevronUp size={16} /> Show less</>
-          ) : (
-            <><ChevronDown size={16} /> Show {hiddenCount} more chapter{hiddenCount > 1 ? "s" : ""}</>
-          )}
-        </button>
       )}
 
-      <button
-        onClick={() => setShowForm(true)}
-        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-200 py-2 text-sm text-zinc-400 hover:border-zinc-300 hover:text-zinc-600 dark:border-zinc-700 dark:text-zinc-500 dark:hover:border-zinc-600 dark:hover:text-zinc-300"
-      >
-        <Plus size={16} />
-        Add Chapter
-      </button>
+      {!collapsed && (
+        <button
+          onClick={() => setShowForm(true)}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-200 py-2 text-sm text-zinc-400 hover:border-zinc-300 hover:text-zinc-600 dark:border-zinc-700 dark:text-zinc-500 dark:hover:border-zinc-600 dark:hover:text-zinc-300"
+        >
+          <Plus size={16} />
+          Add Chapter
+        </button>
+      )}
 
       {showForm && (
         <ChapterForm

@@ -35,24 +35,63 @@ const StoreContext = createContext<AppStore | null>(null)
 
 const STORAGE_KEY = "study-planner-data"
 
-function migrateState(raw: AppState): AppState {
-  let changed = false
-  const chapters = raw.chapters.map((ch, i) => {
-    if (ch.order === undefined || ch.order === null) {
-      changed = true
-      return { ...ch, order: ch.createdAt ? i : i }
+export const BACKUP_VERSION = 1
+
+function normalizeList<T>(
+  list: unknown,
+  defaults: (item: Record<string, unknown>, index: number) => Record<string, unknown>,
+  fallback: T,
+): T {
+  if (!Array.isArray(list)) return fallback
+  return list.map((item, i) => {
+    const known = defaults(item as Record<string, unknown>, i)
+    const out: Record<string, unknown> = { ...known }
+    if (item && typeof item === "object") {
+      for (const key of Object.keys(item)) {
+        if (!(key in out)) out[key] = (item as Record<string, unknown>)[key]
+      }
     }
-    return ch
-  })
-  if (changed) raw = { ...raw, chapters }
-  return raw
+    return out as unknown
+  }) as unknown as T
+}
+
+function normalizeState(raw: unknown): AppState {
+  const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {}
+  const now = Date.now()
+  return {
+    subjects: normalizeList<Subject[]>(src.subjects, (s, i) => ({
+      id: typeof s?.id === "string" ? s.id : `s-${i}`,
+      name: typeof s?.name === "string" ? s.name : "",
+      color: typeof s?.color === "string" ? s.color : "#3b82f6",
+      createdAt: typeof s?.createdAt === "number" ? s.createdAt : now,
+    }), []),
+    chapters: normalizeList<Chapter[]>(src.chapters, (ch, i) => ({
+      id: typeof ch?.id === "string" ? ch.id : `c-${i}`,
+      subjectId: typeof ch?.subjectId === "string" ? ch.subjectId : "",
+      name: typeof ch?.name === "string" ? ch.name : "",
+      completed: !!ch?.completed,
+      order: typeof ch?.order === "number" ? ch.order : i,
+      createdAt: typeof ch?.createdAt === "number" ? ch.createdAt : now,
+    }), []),
+    studyPlans: normalizeList<StudyPlan[]>(src.studyPlans, (p, i) => ({
+      id: typeof p?.id === "string" ? p.id : `p-${i}`,
+      subjectId: typeof p?.subjectId === "string" ? p.subjectId : "",
+      chapterId: typeof p?.chapterId === "string" ? p.chapterId : "",
+      subjectName: typeof p?.subjectName === "string" ? p.subjectName : "",
+      chapterName: typeof p?.chapterName === "string" ? p.chapterName : "",
+      date: typeof p?.date === "string" ? p.date : "",
+      startTime: typeof p?.startTime === "string" ? p.startTime : "",
+      endTime: typeof p?.endTime === "string" ? p.endTime : "",
+      createdAt: typeof p?.createdAt === "number" ? p.createdAt : now,
+    }), []),
+  }
 }
 
 function loadState(): AppState {
   if (typeof window === "undefined") return { subjects: [], chapters: [], studyPlans: [] }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return migrateState(JSON.parse(raw))
+    if (raw) return normalizeState(JSON.parse(raw))
   } catch {}
   return { subjects: [], chapters: [], studyPlans: [] }
 }
@@ -200,15 +239,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   const exportData = useCallback(() => {
-    return JSON.stringify(state, null, 2)
+    return JSON.stringify({ version: BACKUP_VERSION, ...state }, null, 2)
   }, [state])
 
   const importData = useCallback((json: string) => {
     try {
       const data = JSON.parse(json)
-      if (!data.subjects || !data.chapters || !data.studyPlans) return false
+      if (!data || typeof data !== "object") return false
       if (!Array.isArray(data.subjects) || !Array.isArray(data.chapters) || !Array.isArray(data.studyPlans)) return false
-      setState(data)
+      setState(normalizeState(data))
       return true
     } catch {
       return false
