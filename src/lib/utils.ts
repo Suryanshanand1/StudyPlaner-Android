@@ -2,8 +2,15 @@ export function generateId(): string {
   return crypto.randomUUID()
 }
 
+export function toDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
 export function getToday(): string {
-  return new Date().toISOString().split("T")[0]
+  return toDateStr(new Date())
 }
 
 export function getWeekDays(date: Date = new Date()): string[] {
@@ -13,7 +20,7 @@ export function getWeekDays(date: Date = new Date()): string[] {
   for (let i = 0; i < 7; i++) {
     const d = new Date(start)
     d.setDate(d.getDate() + i)
-    days.push(d.toISOString().split("T")[0])
+    days.push(toDateStr(d))
   }
   return days
 }
@@ -40,6 +47,13 @@ export function formatTime(time: string): string {
   const ampm = hour >= 12 ? "PM" : "AM"
   const h12 = hour % 12 || 12
   return `${h12}:${m} ${ampm}`
+}
+
+export function diffHours(startTime: string, endTime: string): number {
+  const [sh, sm] = startTime.split(":").map(Number)
+  const [eh, em] = endTime.split(":").map(Number)
+  const diff = (eh * 60 + em - (sh * 60 + sm)) / 60
+  return Math.max(0, Math.round(diff * 10) / 10)
 }
 
 export function getMonthName(month: number): string {

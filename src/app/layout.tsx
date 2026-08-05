@@ -4,6 +4,7 @@ import "./globals.css"
 import { StoreProvider } from "@/lib/store"
 import { ThemeProvider } from "@/hooks/theme"
 import NotificationManager from "@/components/NotificationManager"
+import UpdateChecker from "@/components/UpdateChecker"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({
         <StoreProvider>
           <ThemeProvider>
             <NotificationManager />
+            <UpdateChecker />
             {children}
           </ThemeProvider>
         </StoreProvider>

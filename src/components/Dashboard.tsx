@@ -1,12 +1,12 @@
 "use client"
 
 import { useMemo } from "react"
-import { BookOpen, Calendar, TrendingUp, Clock, Flame, Target } from "lucide-react"
+import { BookOpen, Calendar, TrendingUp, Clock, Flame, Target, CheckCircle, Circle } from "lucide-react"
 import { useStore } from "@/lib/store"
-import { getToday, formatDate, formatTime } from "@/lib/utils"
+import { getToday, toDateStr, formatDate, formatTime, diffHours } from "@/lib/utils"
 
 export default function Dashboard() {
-  const { subjects, chapters, studyPlans, getUpcomingPlans } = useStore()
+  const { subjects, chapters, studyPlans, getUpcomingPlans, togglePlanConfirmed } = useStore()
   const today = getToday()
 
   const greeting = useMemo(() => {
@@ -25,11 +25,7 @@ export default function Dashboard() {
 
   const todayHours = useMemo(
     () =>
-      todayPlans.reduce((sum, p) => {
-        const [sh, sm] = p.startTime.split(":").map(Number)
-        const [eh, em] = p.endTime.split(":").map(Number)
-        return sum + (eh * 60 + em - (sh * 60 + sm)) / 60
-      }, 0),
+      todayPlans.reduce((sum, p) => sum + diffHours(p.startTime, p.endTime), 0),
     [todayPlans],
   )
 
@@ -42,13 +38,18 @@ export default function Dashboard() {
 
   const streak = useMemo(() => {
     let count = 0
+    const hasConfirmed = (dateStr: string) => studyPlans.some((p) => p.date === dateStr && p.confirmed)
     const d = new Date()
+    let current = toDateStr(d)
+    if (!hasConfirmed(current) && studyPlans.some((p) => p.date === current)) {
+      d.setDate(d.getDate() - 1)
+      current = toDateStr(d)
+    }
     while (true) {
-      const dateStr = d.toISOString().split("T")[0]
-      const hasPlans = studyPlans.some((p) => p.date === dateStr)
-      if (!hasPlans) break
+      if (!hasConfirmed(current)) break
       count++
       d.setDate(d.getDate() - 1)
+      current = toDateStr(d)
     }
     return count
   }, [studyPlans])
@@ -114,7 +115,14 @@ export default function Dashboard() {
             {todayPlans.slice(0, 5).map((plan) => (
               <div key={plan.id} className="flex items-center gap-3 text-sm">
                 <span className="min-w-[52px] text-xs font-medium text-accent">{formatTime(plan.startTime)}</span>
-                <span className="text-zinc-700 dark:text-zinc-300">{plan.subjectName} — {plan.chapterName}</span>
+                <span className={`flex-1 ${plan.confirmed ? "line-through opacity-50" : ""} text-zinc-700 dark:text-zinc-300`}>{plan.subjectName} — {plan.chapterName}</span>
+                <button
+                  onClick={() => togglePlanConfirmed(plan.id)}
+                  className={`rounded-full p-1 transition ${plan.confirmed ? "text-green-500" : "text-zinc-300 hover:text-green-500 dark:text-zinc-600 dark:hover:text-green-400"}`}
+                  title={plan.confirmed ? "Mark as not studied" : "Mark as studied"}
+                >
+                  {plan.confirmed ? <CheckCircle size={18} /> : <Circle size={18} />}
+                </button>
               </div>
             ))}
           </div>

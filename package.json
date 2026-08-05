@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/generate-icons.cjs && next build",
+    "build": "node scripts/generate-icons.cjs && NEXT_PUBLIC_APP_VERSION=$(node -p \"require('./version.json').version\") next build",
     "apk": "npm run build && npx cap copy android && cd android && gradlew assembleDebug",
     "start": "next start",
     "lint": "eslint"

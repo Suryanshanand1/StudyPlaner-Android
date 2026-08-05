@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import type { Subject, Chapter, StudyPlan, StudySession } from "./types"
-import { generateId } from "./utils"
+import { generateId, diffHours } from "./utils"
 
 interface AppState {
   subjects: Subject[]
@@ -21,8 +21,9 @@ interface AppStore {
   toggleChapter: (id: string) => void
   deleteChapter: (id: string) => void
   reorderChapter: (chapterId: string, subjectId: string, toIndex: number) => void
-  addStudyPlan: (plan: Omit<StudyPlan, "id" | "createdAt">) => void
+  addStudyPlan: (plan: Omit<StudyPlan, "id" | "createdAt" | "confirmed">) => void
   deleteStudyPlan: (id: string) => void
+  togglePlanConfirmed: (id: string) => void
   getCompletionPercent: (subjectId: string) => number
   getUpcomingPlans: (date: string) => StudyPlan[]
   getWeekPlans: (weekDays: string[]) => StudyPlan[]
@@ -83,6 +84,7 @@ function normalizeState(raw: unknown): AppState {
       startTime: typeof p?.startTime === "string" ? p.startTime : "",
       endTime: typeof p?.endTime === "string" ? p.endTime : "",
       createdAt: typeof p?.createdAt === "number" ? p.createdAt : now,
+      confirmed: !!p?.confirmed,
     }), []),
   }
 }
@@ -178,10 +180,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const addStudyPlan = useCallback((plan: Omit<StudyPlan, "id" | "createdAt">) => {
+  const addStudyPlan = useCallback((plan: Omit<StudyPlan, "id" | "createdAt" | "confirmed">) => {
     setState((s) => ({
       ...s,
-      studyPlans: [...s.studyPlans, { ...plan, id: generateId(), createdAt: Date.now() }],
+      studyPlans: [...s.studyPlans, { ...plan, id: generateId(), createdAt: Date.now(), confirmed: false }],
     }))
   }, [])
 
@@ -189,6 +191,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setState((s) => ({
       ...s,
       studyPlans: s.studyPlans.filter((p) => p.id !== id),
+    }))
+  }, [])
+
+  const togglePlanConfirmed = useCallback((id: string) => {
+    setState((s) => ({
+      ...s,
+      studyPlans: s.studyPlans.map((p) => (p.id === id ? { ...p, confirmed: !p.confirmed } : p)),
     }))
   }, [])
 
@@ -225,9 +234,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         let hours = 0
         let chaptersCompleted = 0
         for (const plan of dayPlans) {
-          const [sh, sm] = plan.startTime.split(":").map(Number)
-          const [eh, em] = plan.endTime.split(":").map(Number)
-          hours += (eh * 60 + em - (sh * 60 + sm)) / 60
+          hours += diffHours(plan.startTime, plan.endTime)
           const ch = state.chapters.find((c) => c.id === plan.chapterId)
           if (ch?.completed) chaptersCompleted++
         }
@@ -269,6 +276,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         reorderChapter,
         addStudyPlan,
         deleteStudyPlan,
+        togglePlanConfirmed,
         getCompletionPercent,
         getUpcomingPlans,
         getWeekPlans,

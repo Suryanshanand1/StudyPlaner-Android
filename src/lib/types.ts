@@ -24,6 +24,7 @@ export interface StudyPlan {
   startTime: string
   endTime: string
   createdAt: number
+  confirmed: boolean
 }
 
 export interface StudySession {

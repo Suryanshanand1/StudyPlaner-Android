@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -40,7 +42,25 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/StudyPlanner-debug.apk StudyPlanner.apk
+
+      - name: Read version
+        id: version
+        run: echo "version=$(node -p \"require('./version.json').version\")" >> "$GITHUB_OUTPUT"
+
+      - name: Publish Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.version.outputs.version }}
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes --cleanup-tag || true
+          gh release create "$TAG" StudyPlanner.apk \
+            --title "Study Planner $TAG" \
+            --notes "New version of Study Planner. Download the APK below and install it on your device." \
+            --latest
+
       - uses: actions/upload-artifact@v4
         with:
           name: study-planner-apk
-          path: android/app/build/outputs/apk/debug/StudyPlanner-debug.apk
+          path: StudyPlanner.apk
