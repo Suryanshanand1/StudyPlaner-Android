@@ -82,8 +82,14 @@ export default function Settings() {
     const reader = new FileReader()
     reader.onload = (ev) => {
       const text = ev.target?.result as string
-      const ok = importData(text)
-      setImportStatus(ok ? "success" : "error")
+      let ok = false
+      try {
+        ok = importData(text)
+        setImportStatus(ok ? "success" : "error")
+      } catch (e) {
+        console.error("Import failed", e)
+        setImportStatus("error")
+      }
       setTimeout(() => setImportStatus("idle"), 2000)
       if (ok) setTimeout(() => window.location.reload(), 800)
     }

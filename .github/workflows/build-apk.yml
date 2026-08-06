@@ -35,15 +35,32 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Ensure release keystore
+        run: |
+          if [ ! -f android/app/release.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore android/app/release.keystore \
+              -alias release \
+              -keyalg RSA -keysize 2048 -validity 9125 \
+              -storetype JKS -storepass android -keypass android \
+              -dname "CN=Study Planner, OU=App, O=Study Planner, L=NA, ST=NA, C=IN"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add android/app/release.keystore
+            git commit -m "chore: add release signing keystore"
+            git push
+            exit 0
+          fi
+
       - name: Build APK
         run: |
           npx cap sync android
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
       - name: Rename APK
-        run: cp android/app/build/outputs/apk/debug/StudyPlanner-debug.apk StudyPlanner.apk
+        run: cp android/app/build/outputs/apk/release/StudyPlanner-release.apk StudyPlanner.apk
 
       - name: Read version
         id: version

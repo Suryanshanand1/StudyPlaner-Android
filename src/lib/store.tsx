@@ -256,7 +256,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!Array.isArray(data.subjects) || !Array.isArray(data.chapters) || !Array.isArray(data.studyPlans)) return false
       setState(normalizeState(data))
       return true
-    } catch {
+    } catch (e) {
+      console.error("Import failed", e)
       return false
     }
   }, [])
