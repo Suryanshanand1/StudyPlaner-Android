@@ -39,12 +39,12 @@ export default function Settings() {
         await Filesystem.writeFile({
           path: "study-planner-backup.json",
           data: json,
-          directory: Directory.Documents,
+          directory: Directory.Cache,
           encoding: Encoding.UTF8,
         })
         const result = await Filesystem.getUri({
           path: "study-planner-backup.json",
-          directory: Directory.Documents,
+          directory: Directory.Cache,
         })
         await Share.share({
           title: "Study Planner Backup",
@@ -65,7 +65,8 @@ export default function Settings() {
         setTimeout(() => URL.revokeObjectURL(url), 1000)
       }
       setExportStatus("success")
-    } catch {
+    } catch (err) {
+      console.error("Export failed", err)
       setExportStatus("error")
     }
     setTimeout(() => setExportStatus("idle"), 2000)
