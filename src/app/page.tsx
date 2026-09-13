@@ -1,16 +1,17 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { House, BookOpen, Calendar, BarChart3, Plus, Settings as Gear, ArrowLeft } from "lucide-react"
+import { useState } from "react"
+import { House, BookOpen, Calendar, Timer, BarChart3, Plus, Settings as Gear, ArrowLeft } from "lucide-react"
 import { useStore } from "@/lib/store"
 import Dashboard from "@/components/Dashboard"
 import SubjectCard from "@/components/subjects/SubjectCard"
 import SubjectForm from "@/components/subjects/SubjectForm"
 import StudyPlanner from "@/components/planner/StudyPlanner"
+import StudyWatch from "@/components/studywatch/StudyWatch"
 import MonthlyChart from "@/components/chart/MonthlyChart"
 import Settings from "@/components/settings/Settings"
 
-type Tab = "dashboard" | "subjects" | "planner" | "chart"
+type Tab = "dashboard" | "subjects" | "planner" | "watch" | "chart"
 
 export default function App() {
   const { subjects, chapters, addSubject, editSubject } = useStore()
@@ -18,11 +19,6 @@ export default function App() {
   const [showSubjectForm, setShowSubjectForm] = useState(false)
   const [editingSubject, setEditingSubject] = useState<{ id: string; name: string; color: string } | null>(null)
   const [showSettings, setShowSettings] = useState(false)
-
-  const sortedChapters = useMemo(
-    () => chapters.filter((ch) => ch.subjectId === "").sort((a, b) => a.order - b.order),
-    [],
-  )
 
   return (
     <div className="mx-auto flex h-full max-w-lg flex-col bg-zinc-50 dark:bg-zinc-950">
@@ -34,7 +30,7 @@ export default function App() {
           </button>
         ) : (
           <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-            {tab === "dashboard" ? "Dashboard" : tab === "subjects" ? "Subjects" : tab === "planner" ? "Planner" : "Analytics"}
+            {tab === "dashboard" ? "Dashboard" : tab === "subjects" ? "Subjects" : tab === "planner" ? "Planner" : tab === "watch" ? "StudyWatch" : "Analytics"}
           </h1>
         )}
         {!showSettings && (
@@ -83,6 +79,8 @@ export default function App() {
           </div>
         ) : tab === "planner" ? (
           <StudyPlanner />
+        ) : tab === "watch" ? (
+          <StudyWatch />
         ) : (
           <MonthlyChart />
         )}
@@ -94,6 +92,7 @@ export default function App() {
             { key: "dashboard", label: "Home", icon: House },
             { key: "subjects", label: "Subjects", icon: BookOpen },
             { key: "planner", label: "Planner", icon: Calendar },
+            { key: "watch", label: "Watch", icon: Timer },
             { key: "chart", label: "Analytics", icon: BarChart3 },
           ] as const).map(({ key, label, icon: Icon }) => (
             <button

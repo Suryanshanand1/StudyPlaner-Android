@@ -22,6 +22,7 @@ interface AppStore {
   deleteChapter: (id: string) => void
   reorderChapter: (chapterId: string, subjectId: string, toIndex: number) => void
   addStudyPlan: (plan: Omit<StudyPlan, "id" | "createdAt" | "confirmed">) => void
+  addConfirmedStudyPlan: (plan: Omit<StudyPlan, "id" | "createdAt" | "confirmed">) => void
   deleteStudyPlan: (id: string) => void
   togglePlanConfirmed: (id: string) => void
   getCompletionPercent: (subjectId: string) => number
@@ -187,6 +188,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const addConfirmedStudyPlan = useCallback((plan: Omit<StudyPlan, "id" | "createdAt" | "confirmed">) => {
+    setState((s) => ({
+      ...s,
+      studyPlans: [...s.studyPlans, { ...plan, id: generateId(), createdAt: Date.now(), confirmed: true }],
+    }))
+  }, [])
+
   const deleteStudyPlan = useCallback((id: string) => {
     setState((s) => ({
       ...s,
@@ -276,6 +284,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         deleteChapter,
         reorderChapter,
         addStudyPlan,
+        addConfirmedStudyPlan,
         deleteStudyPlan,
         togglePlanConfirmed,
         getCompletionPercent,
