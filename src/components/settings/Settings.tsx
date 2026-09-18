@@ -7,10 +7,7 @@ import { Share } from "@capacitor/share"
 import { useTheme, ACCENT_PRESETS } from "@/hooks/theme"
 import { useStore } from "@/lib/store"
 import { requestNotificationPermission, getPermissionStatus } from "@/lib/notifications"
-
-function isNative(): boolean {
-  return typeof window !== "undefined" && !!(window as any).Capacitor?.isNativePlatform
-}
+import { isNative } from "@/lib/utils"
 
 const THEME_OPTIONS = [
   { value: "light" as const, label: "Light", icon: Sun },

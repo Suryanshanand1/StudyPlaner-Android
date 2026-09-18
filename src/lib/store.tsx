@@ -106,17 +106,11 @@ function saveState(state: AppState) {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>({ subjects: [], chapters: [], studyPlans: [] })
-  const [loaded, setLoaded] = useState(false)
+  const [state, setState] = useState<AppState>(loadState)
 
   useEffect(() => {
-    setState(loadState())
-    setLoaded(true)
-  }, [])
-
-  useEffect(() => {
-    if (loaded) saveState(state)
-  }, [state, loaded])
+    saveState(state)
+  }, [state])
 
   const addSubject = useCallback((name: string, color: string) => {
     setState((s) => ({

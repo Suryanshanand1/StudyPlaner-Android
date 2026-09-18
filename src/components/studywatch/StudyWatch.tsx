@@ -74,19 +74,11 @@ function persistSession(session: WatchSession | null) {
 
 export default function StudyWatch() {
   const { subjects, chapters, addConfirmedStudyPlan } = useStore()
-  const [session, setSession] = useState<WatchSession | null>(null)
+  const [session, setSession] = useState<WatchSession | null>(loadSession)
   const [subjectId, setSubjectId] = useState("")
   const [chapterId, setChapterId] = useState("")
-  const [now, setNow] = useState(0)
+  const [now, setNow] = useState(() => Date.now())
   const [savedLabel, setSavedLabel] = useState<string | null>(null)
-
-  useEffect(() => {
-    const loaded = loadSession()
-    if (loaded) {
-      setSession(loaded)
-      setNow(Date.now())
-    }
-  }, [])
 
   const running = session?.state === "running"
 

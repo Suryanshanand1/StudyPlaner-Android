@@ -5,14 +5,11 @@ import { X, Download, RotateCw } from "lucide-react"
 import { LocalNotifications } from "@capacitor/local-notifications"
 import { APP_VERSION, getLatestRelease, isNewer, type LatestRelease } from "@/lib/update"
 import { requestNotificationPermission } from "@/lib/notifications"
+import { isNative } from "@/lib/utils"
 
 const LAST_CHECK_KEY = "study-planner-update-check"
 const NOTIFIED_KEY = "study-planner-update-notified"
 const DAY_MS = 24 * 60 * 60 * 1000
-
-function isNative(): boolean {
-  return typeof window !== "undefined" && !!(window as any).Capacitor?.isNativePlatform
-}
 
 async function sendUpdateNotification(version: string) {
   const ok = await requestNotificationPermission()

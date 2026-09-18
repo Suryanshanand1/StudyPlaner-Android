@@ -37,16 +37,15 @@ export default function Dashboard() {
   )
 
   const streak = useMemo(() => {
-    let count = 0
     const hasConfirmed = (dateStr: string) => studyPlans.some((p) => p.date === dateStr && p.confirmed)
+    let count = 0
     const d = new Date()
     let current = toDateStr(d)
-    if (!hasConfirmed(current) && studyPlans.some((p) => p.date === current)) {
+    if (!hasConfirmed(current)) {
       d.setDate(d.getDate() - 1)
       current = toDateStr(d)
     }
-    while (true) {
-      if (!hasConfirmed(current)) break
+    while (hasConfirmed(current)) {
       count++
       d.setDate(d.getDate() - 1)
       current = toDateStr(d)
@@ -109,7 +108,7 @@ export default function Dashboard() {
         <div className="rounded-xl border border-zinc-100 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="mb-3 flex items-center gap-2">
             <Calendar size={16} className="text-accent" />
-            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Today's Schedule</h3>
+            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Today&apos;s Schedule</h3>
           </div>
           <div className="space-y-2">
             {todayPlans.slice(0, 5).map((plan) => (

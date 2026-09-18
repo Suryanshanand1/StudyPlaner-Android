@@ -20,6 +20,7 @@ export default function PlanForm({ onSave, onCancel }: PlanFormProps) {
 
   const filteredChapters = chapters.filter((ch) => ch.subjectId === subjectId)
   const selectedSubject = subjects.find((s) => s.id === subjectId)
+  const invalidTime = startTime >= endTime
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 dark:bg-black/60">
@@ -89,9 +90,15 @@ export default function PlanForm({ onSave, onCancel }: PlanFormProps) {
           </div>
         </div>
 
+        {invalidTime && (
+          <p className="mb-3 text-xs font-medium text-red-500">
+            End time must be after start time
+          </p>
+        )}
+
         <button
           onClick={() => {
-            if (!chapterId || !subjectId) return
+            if (!chapterId || !subjectId || invalidTime) return
             const ch = chapters.find((c) => c.id === chapterId)
             addStudyPlan({
               subjectId,
@@ -104,7 +111,7 @@ export default function PlanForm({ onSave, onCancel }: PlanFormProps) {
             })
             onSave()
           }}
-          disabled={!chapterId || !subjectId}
+          disabled={!chapterId || !subjectId || invalidTime}
           className="w-full rounded-xl bg-accent py-3 text-sm font-medium text-white disabled:opacity-40"
         >
           Add to Schedule

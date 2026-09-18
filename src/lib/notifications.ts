@@ -1,9 +1,6 @@
 import { LocalNotifications } from "@capacitor/local-notifications"
 import type { StudyPlan } from "./types"
-
-function isNative(): boolean {
-  return typeof window !== "undefined" && !!(window as any).Capacitor?.isNativePlatform
-}
+import { isNative } from "./utils"
 
 function planIdToNumber(id: string): number {
   let hash = 0

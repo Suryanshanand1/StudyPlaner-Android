@@ -53,39 +53,29 @@ function applyAccent(color: string) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>("system")
-  const [resolvedTheme, setResolved] = useState<"light" | "dark">("light")
-  const [accentColor, setAccentState] = useState(ACCENT_PRESETS[0].value)
-  const [loaded, setLoaded] = useState(false)
+  const [theme, setThemeState] = useState<ThemeMode>(() => getStored<ThemeMode>(THEME_KEY, "system"))
+  const [resolvedTheme, setResolved] = useState<"light" | "dark">(() =>
+    resolve(getStored<ThemeMode>(THEME_KEY, "system")),
+  )
+  const [accentColor, setAccentState] = useState<string>(() =>
+    getStored<string>(ACCENT_KEY, ACCENT_PRESETS[0].value),
+  )
 
   useEffect(() => {
-    const storedTheme = getStored<ThemeMode>(THEME_KEY, "system")
-    const storedAccent = getStored<string>(ACCENT_KEY, ACCENT_PRESETS[0].value)
-    setThemeState(storedTheme)
-    setAccentState(storedAccent)
-    setResolved(resolve(storedTheme))
-    setLoaded(true)
-  }, [])
-
-  useEffect(() => {
-    if (!loaded) return
     applyTheme(resolvedTheme)
-  }, [resolvedTheme, loaded])
+  }, [resolvedTheme])
 
   useEffect(() => {
-    if (!loaded) return
     applyAccent(accentColor)
-  }, [accentColor, loaded])
+  }, [accentColor])
 
   useEffect(() => {
-    if (!loaded) return
     try { localStorage.setItem(THEME_KEY, JSON.stringify(theme)) } catch {}
-  }, [theme, loaded])
+  }, [theme])
 
   useEffect(() => {
-    if (!loaded) return
     try { localStorage.setItem(ACCENT_KEY, JSON.stringify(accentColor)) } catch {}
-  }, [accentColor, loaded])
+  }, [accentColor])
 
   useEffect(() => {
     if (theme !== "system") return

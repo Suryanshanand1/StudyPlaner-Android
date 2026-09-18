@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/generate-icons.cjs && NEXT_PUBLIC_APP_VERSION=$(node -p \"require('./version.json').version\") next build",
+    "build": "node scripts/build.cjs",
     "apk": "npm run build && npx cap copy android && cd android && gradlew assembleDebug",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
+    "@capacitor/app": "^8.1.1",
     "@capacitor/cli": "^8.4.2",
     "@capacitor/core": "^8.4.2",
     "@capacitor/filesystem": "^8.1.2",

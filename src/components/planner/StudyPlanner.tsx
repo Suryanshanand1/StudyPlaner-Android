@@ -69,6 +69,14 @@ export default function StudyPlanner() {
               <ChevronRight size={18} className="text-zinc-600 dark:text-zinc-400" />
             </button>
           </div>
+          {currentDate !== getToday() && (
+            <button
+              onClick={() => setCurrentDate(getToday())}
+              className="mb-2 w-full rounded-lg bg-accent/10 py-1.5 text-xs font-medium text-accent hover:bg-accent/20"
+            >
+              Jump to Today
+            </button>
+          )}
           <div className="space-y-2">
             {dayPlans.length === 0 && (
               <p className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500">No study plans for this day</p>
