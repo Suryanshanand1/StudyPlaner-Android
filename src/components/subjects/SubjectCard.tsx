@@ -54,20 +54,18 @@ export default function SubjectCard({
         </div>
       </div>
 
-      {!collapsed && (
-        <div className="mb-3">
-          <div className="mb-1 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-            <span>Progress</span>
-            <span>{percent}%</span>
-          </div>
-          <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
-            <div
-              className="h-2 rounded-full transition-all"
-              style={{ width: `${percent}%`, backgroundColor: subject.color }}
-            />
-          </div>
+      <div className="mb-3">
+        <div className="mb-1 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+          <span>Progress</span>
+          <span>{percent}% · {sorted.filter((ch) => ch.completed).length}/{sorted.length} chapters</span>
         </div>
-      )}
+        <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
+          <div
+            className="h-2 rounded-full transition-all"
+            style={{ width: `${percent}%`, backgroundColor: subject.color }}
+          />
+        </div>
+      </div>
 
       {!collapsed && (
       <div className="space-y-0.5">
