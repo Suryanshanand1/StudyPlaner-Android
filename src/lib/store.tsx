@@ -232,7 +232,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const sessions: StudySession[] = []
       for (let d = 1; d <= days; d++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`
-        const dayPlans = state.studyPlans.filter((p) => p.date === dateStr)
+        const dayPlans = state.studyPlans.filter((p) => p.date === dateStr && p.confirmed)
         let hours = 0
         let chaptersCompleted = 0
         for (const plan of dayPlans) {

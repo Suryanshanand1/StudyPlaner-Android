@@ -59,7 +59,12 @@ export function formatTime(time: string): string {
 export function diffHours(startTime: string, endTime: string): number {
   const [sh, sm] = startTime.split(":").map(Number)
   const [eh, em] = endTime.split(":").map(Number)
-  const diff = (eh * 60 + em - (sh * 60 + sm)) / 60
+  // End time earlier than start means the session crossed midnight.
+  // Windows that cross midnight (e.g. 23:40 -> 00:05) count toward the
+  // start date's daily hours (the dashboard and analytics attribute the
+  // session to the day it started).
+  const crossMidnight = eh * 60 + em < sh * 60 + sm
+  const diff = (eh * 60 + em + (crossMidnight ? 24 * 60 : 0) - (sh * 60 + sm)) / 60
   return Math.max(0, Math.round(diff * 10) / 10)
 }
 
