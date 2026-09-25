@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { App } from "@capacitor/app"
 import { useStore } from "@/lib/store"
+import CustomSubjectAdd from "@/components/subjects/CustomSubjectAdd"
 
 interface IncomingSession {
   label: string
@@ -40,6 +41,7 @@ export default function IncomingSession() {
   const [incoming, setIncoming] = useState<IncomingSession | null>(null)
   const [subjectId, setSubjectId] = useState("")
   const [chapterId, setChapterId] = useState("")
+  const [showCustom, setShowCustom] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -57,6 +59,7 @@ export default function IncomingSession() {
       if (parsed) {
         setSubjectId("")
         setChapterId("")
+        setShowCustom(false)
         setIncoming(parsed)
       }
     })
@@ -85,6 +88,7 @@ export default function IncomingSession() {
     setIncoming(null)
     setSubjectId("")
     setChapterId("")
+    setShowCustom(false)
   }
 
   return (
@@ -100,10 +104,15 @@ export default function IncomingSession() {
           <div>
             <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Subject</label>
             <select
-              value={subjectId}
+              value={showCustom ? "__custom__" : subjectId}
               onChange={(e) => {
-                setSubjectId(e.target.value)
-                setChapterId("")
+                if (e.target.value === "__custom__") {
+                  setShowCustom(true)
+                } else {
+                  setShowCustom(false)
+                  setSubjectId(e.target.value)
+                  setChapterId("")
+                }
               }}
               className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none dark:border-zinc-700 dark:bg-zinc-800"
             >
@@ -111,8 +120,22 @@ export default function IncomingSession() {
               {subjects.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
+              <option value="__custom__">+ Custom subject</option>
             </select>
           </div>
+
+          {showCustom && (
+            <div>
+              <CustomSubjectAdd
+                onCreated={(sid, cid) => {
+                  setSubjectId(sid)
+                  setChapterId(cid)
+                  setShowCustom(false)
+                }}
+                onCancel={() => setShowCustom(false)}
+              />
+            </div>
+          )}
 
           {subjectId && (
             <div>

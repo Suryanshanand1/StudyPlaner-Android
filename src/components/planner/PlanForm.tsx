@@ -4,6 +4,7 @@ import { useState } from "react"
 import { X } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { getToday } from "@/lib/utils"
+import CustomSubjectAdd from "@/components/subjects/CustomSubjectAdd"
 
 interface PlanFormProps {
   onSave: () => void
@@ -14,6 +15,7 @@ export default function PlanForm({ onSave, onCancel }: PlanFormProps) {
   const { subjects, chapters, addStudyPlan } = useStore()
   const [subjectId, setSubjectId] = useState(subjects[0]?.id ?? "")
   const [chapterId, setChapterId] = useState("")
+  const [showCustom, setShowCustom] = useState(false)
   const [date, setDate] = useState(getToday())
   const [startTime, setStartTime] = useState("09:00")
   const [endTime, setEndTime] = useState("10:00")
@@ -35,15 +37,37 @@ export default function PlanForm({ onSave, onCancel }: PlanFormProps) {
         <div className="mb-3">
           <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Subject</label>
           <select
-            value={subjectId}
-            onChange={(e) => { setSubjectId(e.target.value); setChapterId("") }}
+            value={showCustom ? "__custom__" : subjectId}
+            onChange={(e) => {
+              if (e.target.value === "__custom__") {
+                setShowCustom(true)
+              } else {
+                setShowCustom(false)
+                setSubjectId(e.target.value)
+                setChapterId("")
+              }
+            }}
             className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
           >
             {subjects.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
+            <option value="__custom__">+ Custom subject</option>
           </select>
         </div>
+
+        {showCustom && (
+          <div className="mb-3">
+            <CustomSubjectAdd
+              onCreated={(sid, cid) => {
+                setSubjectId(sid)
+                setChapterId(cid)
+                setShowCustom(false)
+              }}
+              onCancel={() => setShowCustom(false)}
+            />
+          </div>
+        )}
 
         <div className="mb-3">
           <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Chapter</label>

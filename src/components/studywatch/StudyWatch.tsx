@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Play, Pause, RotateCcw, Save, CheckCircle, Timer } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { getToday } from "@/lib/utils"
+import CustomSubjectAdd from "@/components/subjects/CustomSubjectAdd"
 
 const SESSION_KEY = "study-watch-session"
 const MIN_SAVE_MS = 60 * 1000
@@ -77,6 +78,7 @@ export default function StudyWatch() {
   const [session, setSession] = useState<WatchSession | null>(loadSession)
   const [subjectId, setSubjectId] = useState("")
   const [chapterId, setChapterId] = useState("")
+  const [showCustom, setShowCustom] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const [savedLabel, setSavedLabel] = useState<string | null>(null)
 
@@ -172,15 +174,37 @@ export default function StudyWatch() {
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Subject</label>
               <select
-                value={effectiveSubjectId}
-                onChange={(e) => { setSubjectId(e.target.value); setChapterId("") }}
+                value={showCustom ? "__custom__" : effectiveSubjectId}
+                onChange={(e) => {
+                  if (e.target.value === "__custom__") {
+                    setShowCustom(true)
+                  } else {
+                    setShowCustom(false)
+                    setSubjectId(e.target.value)
+                    setChapterId("")
+                  }
+                }}
                 className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
               >
                 {subjects.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
+                <option value="__custom__">+ Custom subject</option>
               </select>
             </div>
+
+            {showCustom && (
+              <div>
+                <CustomSubjectAdd
+                  onCreated={(sid, cid) => {
+                    setSubjectId(sid)
+                    setChapterId(cid)
+                    setShowCustom(false)
+                  }}
+                  onCancel={() => setShowCustom(false)}
+                />
+              </div>
+            )}
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Chapter</label>
               <select
