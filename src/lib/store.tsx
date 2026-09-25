@@ -14,10 +14,10 @@ interface AppStore {
   subjects: Subject[]
   chapters: Chapter[]
   studyPlans: StudyPlan[]
-  addSubject: (name: string, color: string) => void
+  addSubject: (name: string, color: string) => string
   editSubject: (id: string, name: string, color: string) => void
   deleteSubject: (id: string) => void
-  addChapter: (subjectId: string, name: string) => void
+  addChapter: (subjectId: string, name: string) => string
   toggleChapter: (id: string) => void
   deleteChapter: (id: string) => void
   reorderChapter: (chapterId: string, subjectId: string, toIndex: number) => void
@@ -113,10 +113,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [state])
 
   const addSubject = useCallback((name: string, color: string) => {
+    const id = generateId()
     setState((s) => ({
       ...s,
-      subjects: [...s.subjects, { id: generateId(), name, color, createdAt: Date.now() }],
+      subjects: [...s.subjects, { id, name, color, createdAt: Date.now() }],
     }))
+    return id
   }, [])
 
   const editSubject = useCallback((id: string, name: string, color: string) => {
@@ -135,14 +137,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addChapter = useCallback((subjectId: string, name: string) => {
+    const id = generateId()
     setState((s) => {
       const subjectChapters = s.chapters.filter((ch) => ch.subjectId === subjectId)
       const maxOrder = subjectChapters.length > 0 ? Math.max(...subjectChapters.map((ch) => ch.order)) : -1
       return {
         ...s,
-        chapters: [...s.chapters, { id: generateId(), subjectId, name, completed: false, order: maxOrder + 1, createdAt: Date.now() }],
+        chapters: [...s.chapters, { id, subjectId, name, completed: false, order: maxOrder + 1, createdAt: Date.now() }],
       }
     })
+    return id
   }, [])
 
   const toggleChapter = useCallback((id: string) => {
