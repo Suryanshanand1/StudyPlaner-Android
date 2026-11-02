@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Study Planner</string>
+    <string name="notification_channel_reminders">Study reminders</string>
+    <string name="notification_channel_timer">Focus timer</string>
+</resources>
