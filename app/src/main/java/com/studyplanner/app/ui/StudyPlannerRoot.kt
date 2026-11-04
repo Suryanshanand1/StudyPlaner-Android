@@ -11,7 +11,7 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Watch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,9 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.studyplanner.app.data.IncomingSession
-import com.studyplanner.app.ui.components.IncomingSessionDialog
 import com.studyplanner.app.ui.screens.AnalyticsScreen
 import com.studyplanner.app.ui.screens.DashboardScreen
 import com.studyplanner.app.ui.screens.FocusScreen
@@ -50,24 +47,17 @@ enum class AppTab(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Outlined.Home),
     SUBJECTS("Subjects", Icons.AutoMirrored.Outlined.MenuBook),
     PLANNER("Planner", Icons.Outlined.CalendarMonth),
-    FOCUS("Focus", Icons.Outlined.Timer),
+    FOCUS("Focus", Icons.Outlined.Watch),
     ANALYTICS("Analytics", Icons.Outlined.BarChart),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StudyPlannerRoot(
-    viewModel: AppViewModel,
-    incoming: IncomingSession?,
-    onDismissIncoming: () -> Unit,
-) {
+fun StudyPlannerRoot(viewModel: AppViewModel) {
     var tab by rememberSaveable { mutableStateOf(AppTab.HOME) }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
-    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
-    val chapters by viewModel.chapters.collectAsStateWithLifecycle()
 
     fun showMessage(message: String) {
         scope.launch { snackbarHostState.showSnackbar(message) }
@@ -146,15 +136,5 @@ fun StudyPlannerRoot(
                 else -> AnalyticsScreen(viewModel)
             }
         }
-    }
-
-    if (incoming != null) {
-        IncomingSessionDialog(
-            viewModel = viewModel,
-            incoming = incoming,
-            subjects = subjects,
-            chapters = chapters,
-            onDismiss = onDismissIncoming,
-        )
     }
 }

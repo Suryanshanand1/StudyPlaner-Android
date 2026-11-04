@@ -3,8 +3,6 @@ package com.studyplanner.app.notify
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.studyplanner.app.data.ActiveSessionStore
-import com.studyplanner.app.data.FocusMode
 import com.studyplanner.app.data.StudyDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,19 +30,6 @@ class PlanAlarmReceiver : BroadcastReceiver() {
     }
 }
 
-class FocusAlarmReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        val label = intent.getStringExtra("label") ?: "Focus session"
-        NotificationScheduler.showNotification(
-            context = context,
-            channelId = NotificationScheduler.CHANNEL_TIMER,
-            notificationId = NotificationScheduler.FOCUS_ALARM_CODE,
-            title = "Time's up!",
-            body = "$label — your focus session is complete.",
-        )
-    }
-}
-
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action !in BOOT_ACTIONS) return
@@ -54,20 +39,6 @@ class BootReceiver : BroadcastReceiver() {
             try {
                 val plans = StudyDatabase.get(appContext).dao().getPlans()
                 NotificationScheduler.syncPlans(appContext, plans)
-
-                val active = ActiveSessionStore(appContext).load()
-                if (active != null && active.isRunning && !active.finished &&
-                    active.mode == FocusMode.TIMER
-                ) {
-                    val remaining = active.remaining(System.currentTimeMillis())
-                    if (remaining > 0) {
-                        NotificationScheduler.scheduleFocusFinish(
-                            appContext,
-                            remaining,
-                            active.label,
-                        )
-                    }
-                }
             } finally {
                 pendingResult.finish()
             }

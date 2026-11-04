@@ -13,8 +13,8 @@ android {
         applicationId = "com.studyplanner.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "2.0.0"
+        versionCode = 9
+        versionName = "2.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

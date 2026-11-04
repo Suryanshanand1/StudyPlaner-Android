@@ -11,13 +11,11 @@ import com.studyplanner.app.BuildConfig
 import com.studyplanner.app.data.ActiveSession
 import com.studyplanner.app.data.ActiveSessionStore
 import com.studyplanner.app.data.AppSettings
-import com.studyplanner.app.data.FocusMode
-import com.studyplanner.app.data.IncomingSession
+import com.studyplanner.app.data.SessionState
 import com.studyplanner.app.data.SettingsRepository
 import com.studyplanner.app.data.StudyDatabase
 import com.studyplanner.app.data.StudyRepository
 import com.studyplanner.app.data.ThemeMode
-import com.studyplanner.app.data.TimerState
 import com.studyplanner.app.data.UpdateChecker
 import com.studyplanner.app.data.UpdateInfo
 import com.studyplanner.app.notify.NotificationScheduler
@@ -90,7 +88,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 ticker = viewModelScope.launch {
                     while (isActive) {
                         _now.value = System.currentTimeMillis()
-                        checkTimerFinished()
                         delay(250)
                     }
                 }
@@ -99,19 +96,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             ticker?.cancel()
             ticker = null
             _now.value = System.currentTimeMillis()
-        }
-    }
-
-    private fun checkTimerFinished() {
-        val session = _activeSession.value ?: return
-        if (session.mode != FocusMode.TIMER || !session.isRunning || session.finished) return
-        if (session.elapsed(_now.value) >= session.durationMs) {
-            _activeSession.value = session.copy(
-                accumulatedMs = session.durationMs,
-                segmentStartedAt = _now.value,
-                state = TimerState.PAUSED,
-                finished = true,
-            )
         }
     }
 
@@ -215,39 +199,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { repository.togglePlanConfirmed(id) }
     }
 
-    fun saveIncomingSession(
-        incoming: IncomingSession,
-        subjectId: String,
-        chapterId: String,
-        onDone: () -> Unit,
-    ) {
-        viewModelScope.launch {
-            // Read once so the names match the ids even if the dialog was opened a while ago.
-            val dao = StudyDatabase.get(app).dao()
-            val subjects = withContext(Dispatchers.IO) { dao.getSubjects() }
-            val chapters = withContext(Dispatchers.IO) { dao.getChapters() }
-            val subject = subjects.firstOrNull { it.id == subjectId }
-            val chapter = chapters.firstOrNull { it.id == chapterId }
-            repository.addPlan(
-                subjectId = subjectId,
-                chapterId = chapterId,
-                subjectName = subject?.name ?: "Allies",
-                chapterName = chapter?.name ?: incoming.label,
-                date = incoming.date,
-                startTime = incoming.startTime,
-                endTime = incoming.endTime,
-                confirmed = true,
-                source = "allies",
-            )
-            onDone()
-        }
-    }
-
-    // ----- Focus session -----
+    // ----- Focus session (stopwatch) -----
 
     fun startFocusSession(
-        mode: FocusMode,
-        durationMs: Long,
         subjectId: String,
         chapterId: String,
         subjectName: String,
@@ -262,25 +216,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             else -> "Focus session"
         }
         val session = ActiveSession(
-            mode = mode,
             subjectId = subjectId,
             chapterId = chapterId,
             subjectName = subjectName,
             chapterName = chapterLabel,
-            durationMs = if (mode == FocusMode.TIMER) durationMs else 0L,
             startedAt = timestamp,
             segmentStartedAt = timestamp,
             accumulatedMs = 0L,
-            state = TimerState.RUNNING,
-            finished = false,
+            state = SessionState.RUNNING,
         )
         _now.value = timestamp
         _activeSession.value = session
         savedMessage.value = null
-        NotificationScheduler.cancelFocusNotification(app)
-        if (mode == FocusMode.TIMER && durationMs > 0) {
-            NotificationScheduler.scheduleFocusFinish(app, durationMs, session.label)
-        }
     }
 
     fun pauseFocusSession() {
@@ -290,34 +237,28 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         _activeSession.value = session.copy(
             accumulatedMs = session.elapsed(timestamp),
             segmentStartedAt = timestamp,
-            state = TimerState.PAUSED,
+            state = SessionState.PAUSED,
         )
         _now.value = timestamp
-        NotificationScheduler.cancelFocusFinish(app)
     }
 
     fun resumeFocusSession() {
         val session = _activeSession.value ?: return
-        if (session.isRunning || session.finished) return
+        if (session.isRunning) return
         val timestamp = System.currentTimeMillis()
         _activeSession.value = session.copy(
             segmentStartedAt = timestamp,
-            state = TimerState.RUNNING,
+            state = SessionState.RUNNING,
         )
         _now.value = timestamp
-        if (session.mode == FocusMode.TIMER) {
-            NotificationScheduler.scheduleFocusFinish(app, session.remaining(timestamp), session.label)
-        }
     }
 
     fun discardFocusSession() {
-        NotificationScheduler.cancelFocusFinish(app)
-        NotificationScheduler.cancelFocusNotification(app)
         _activeSession.value = null
     }
 
     /**
-     * Saves the running/finished session as a confirmed plan and records it in Allies history.
+     * Saves the running/paused stopwatch as a confirmed plan and records it in focus history.
      * Minimum duration is one minute, matching the web app.
      */
     fun saveFocusSession(onSaved: (String) -> Unit) {
@@ -356,8 +297,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 endTime = endTime,
                 minutes = minutes,
             )
-            NotificationScheduler.cancelFocusFinish(app)
-            NotificationScheduler.cancelFocusNotification(app)
             _activeSession.value = null
             val summary = "${session.label} (${Dates.durationLabel(elapsed)})"
             savedMessage.value = summary

@@ -52,24 +52,19 @@ data class FocusSessionEntity(
     val createdAt: Long,
 )
 
-enum class FocusMode { TIMER, STOPWATCH }
-
-enum class TimerState { RUNNING, PAUSED }
+enum class SessionState { RUNNING, PAUSED }
 
 data class ActiveSession(
-    val mode: FocusMode,
     val subjectId: String,
     val chapterId: String,
     val subjectName: String,
     val chapterName: String,
-    val durationMs: Long,
     val startedAt: Long,
     val segmentStartedAt: Long,
     val accumulatedMs: Long,
-    val state: TimerState,
-    val finished: Boolean,
+    val state: SessionState,
 ) {
-    val isRunning: Boolean get() = state == TimerState.RUNNING
+    val isRunning: Boolean get() = state == SessionState.RUNNING
     val label: String get() = when {
         subjectName.isNotBlank() && chapterName.isNotBlank() -> "$subjectName — $chapterName"
         subjectName.isNotBlank() -> subjectName
@@ -78,8 +73,5 @@ data class ActiveSession(
     }
 
     fun elapsed(now: Long): Long =
-        accumulatedMs + if (state == TimerState.RUNNING) (now - segmentStartedAt).coerceAtLeast(0) else 0
-
-    fun remaining(now: Long): Long =
-        (durationMs - elapsed(now)).coerceAtLeast(0)
+        accumulatedMs + if (state == SessionState.RUNNING) (now - segmentStartedAt).coerceAtLeast(0) else 0
 }

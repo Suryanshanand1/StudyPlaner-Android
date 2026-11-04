@@ -1,7 +1,6 @@
 package com.studyplanner.app.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,14 +18,11 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Watch
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -36,7 +32,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,12 +40,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.studyplanner.app.data.ActiveSession
-import com.studyplanner.app.data.FocusMode
 import com.studyplanner.app.ui.AppViewModel
 import com.studyplanner.app.ui.components.ColorDot
 import com.studyplanner.app.ui.components.DropdownField
@@ -60,7 +55,6 @@ import com.studyplanner.app.ui.components.StudyCard
 import com.studyplanner.app.ui.theme.TimerFontFamily
 import com.studyplanner.app.util.Dates
 import java.util.Locale
-import kotlin.math.roundToInt
 
 @Composable
 fun FocusScreen(viewModel: AppViewModel) {
@@ -70,10 +64,6 @@ fun FocusScreen(viewModel: AppViewModel) {
     val chapters by viewModel.chapters.collectAsStateWithLifecycle()
     val history by viewModel.focusSessions.collectAsStateWithLifecycle()
 
-    var mode by rememberSaveable { mutableStateOf(FocusMode.TIMER) }
-    var hours by rememberSaveable { mutableIntStateOf(0) }
-    var minutes by rememberSaveable { mutableIntStateOf(25) }
-    var seconds by rememberSaveable { mutableIntStateOf(0) }
     var subjectId by rememberSaveable { mutableStateOf("") }
     var chapterId by rememberSaveable { mutableStateOf("") }
     var label by rememberSaveable { mutableStateOf("") }
@@ -103,80 +93,14 @@ fun FocusScreen(viewModel: AppViewModel) {
     }
 
     val elapsed = session?.elapsed(now) ?: 0L
-    val remaining = session?.remaining(now) ?: 0L
-    val timerFinished = session?.finished == true && session?.mode == FocusMode.TIMER
     val canSave = session != null && elapsed >= AppViewModel.MIN_SAVE_MS
-    val shown = when {
-        session == null -> 0L
-        session?.mode == FocusMode.TIMER -> remaining
-        else -> elapsed
-    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item {
-            if (session == null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    ModeButton(
-                        label = "Timer",
-                        icon = Icons.Outlined.Timer,
-                        selected = mode == FocusMode.TIMER,
-                        onClick = { mode = FocusMode.TIMER },
-                        modifier = Modifier.weight(1f),
-                    )
-                    ModeButton(
-                        label = "Stopwatch",
-                        icon = Icons.Outlined.Watch,
-                        selected = mode == FocusMode.STOPWATCH,
-                        onClick = { mode = FocusMode.STOPWATCH },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-
         if (session == null) {
-            if (mode == FocusMode.TIMER) {
-                item {
-                    StudyCard {
-                        Text(
-                            "Session length",
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                        ) {
-                            Stepper(
-                                label = "Hours",
-                                value = hours,
-                                max = 99,
-                                onChange = { hours = it },
-                            )
-                            Stepper(
-                                label = "Min",
-                                value = minutes,
-                                max = 59,
-                                onChange = { minutes = it },
-                            )
-                            Stepper(
-                                label = "Sec",
-                                value = seconds,
-                                max = 59,
-                                onChange = { seconds = it },
-                            )
-                        }
-                    }
-                }
-            }
-
             item {
                 StudyCard {
                     SectionTitle(text = "What are you studying?")
@@ -226,45 +150,56 @@ fun FocusScreen(viewModel: AppViewModel) {
         item {
             StudyCard {
                 session?.let { active ->
-                    ActiveSessionHeader(session = active, timerFinished = timerFinished)
+                    ActiveSessionHeader(session = active)
                     Spacer(Modifier.height(12.dp))
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Outlined.Watch,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.size(6.dp))
+                    Text(
+                        "Stopwatch",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
                 Text(
-                    text = Dates.clock(shown),
+                    text = Dates.clock(elapsed),
                     fontFamily = TimerFontFamily,
                     fontSize = 54.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (timerFinished) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.fillMaxWidth(),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = when {
-                        session == null && mode == FocusMode.TIMER -> "Set a duration and start"
                         session == null -> "Start to time any study session"
-                        timerFinished -> "Time's up — save your session"
-                        session?.isRunning == true && session?.mode == FocusMode.TIMER ->
-                            "${Dates.durationLabel(remaining)} remaining"
                         session?.isRunning == true -> "${Dates.durationLabel(elapsed)} elapsed"
                         else -> "Paused"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth(),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(Modifier.height(18.dp))
 
                 if (session == null) {
-                    val durationMs = (hours * 3600L + minutes * 60L + seconds) * 1000L
                     Button(
                         onClick = {
                             viewModel.startFocusSession(
-                                mode = mode,
-                                durationMs = durationMs,
                                 subjectId = subjectId,
                                 chapterId = chapterId,
                                 subjectName = selectedSubject?.name.orEmpty(),
@@ -273,7 +208,6 @@ fun FocusScreen(viewModel: AppViewModel) {
                             )
                             savedLabel = null
                         },
-                        enabled = mode == FocusMode.STOPWATCH || durationMs > 0,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
@@ -281,10 +215,7 @@ fun FocusScreen(viewModel: AppViewModel) {
                     ) {
                         Icon(Icons.Outlined.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.size(7.dp))
-                        Text(
-                            if (mode == FocusMode.TIMER) "Start focus timer" else "Start stopwatch",
-                            fontWeight = FontWeight.SemiBold,
-                        )
+                        Text("Start stopwatch", fontWeight = FontWeight.SemiBold)
                     }
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -303,7 +234,6 @@ fun FocusScreen(viewModel: AppViewModel) {
                         } else {
                             Button(
                                 onClick = viewModel::resumeFocusSession,
-                                enabled = !timerFinished,
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp),
@@ -348,14 +278,14 @@ fun FocusScreen(viewModel: AppViewModel) {
                             fontWeight = FontWeight.SemiBold,
                         )
                     }
-                    if (session != null && elapsed < AppViewModel.MIN_SAVE_MS) {
+                    if (elapsed < AppViewModel.MIN_SAVE_MS) {
                         Spacer(Modifier.height(6.dp))
                         Text(
                             "Study for at least 1 minute before saving.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
@@ -464,7 +394,7 @@ fun FocusScreen(viewModel: AppViewModel) {
 }
 
 @Composable
-private fun ActiveSessionHeader(session: ActiveSession, timerFinished: Boolean) {
+private fun ActiveSessionHeader(session: ActiveSession) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -486,100 +416,11 @@ private fun ActiveSessionHeader(session: ActiveSession, timerFinished: Boolean) 
             modifier = Modifier.weight(1f),
         )
         Text(
-            text = when {
-                timerFinished -> "Done"
-                session.isRunning -> "Studying"
-                else -> "Paused"
-            },
+            text = if (session.isRunning) "Studying" else "Paused",
             style = MaterialTheme.typography.labelSmall,
-            color = if (timerFinished) MaterialTheme.colorScheme.primary
-            else if (session.isRunning) Color(0xFF16A34A)
+            color = if (session.isRunning) Color(0xFF16A34A)
             else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold,
         )
-    }
-}
-
-@Composable
-private fun ModeButton(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        color = if (selected) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-        ),
-    ) {
-        Row(
-            modifier = Modifier.padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(17.dp),
-                tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.size(6.dp))
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-            )
-        }
-    }
-}
-
-@Composable
-private fun Stepper(
-    label: String,
-    value: Int,
-    max: Int,
-    onChange: (Int) -> Unit,
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            label.uppercase(Locale.US),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(6.dp))
-        Row(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp))
-                .padding(2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(
-                onClick = { onChange((value - 1).coerceIn(0, max)) },
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(Icons.Outlined.Remove, contentDescription = "Decrease $label", modifier = Modifier.size(16.dp))
-            }
-            Text(
-                text = "%02d".format(Locale.US, value),
-                fontFamily = TimerFontFamily,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
-                modifier = Modifier.padding(horizontal = 4.dp),
-            )
-            IconButton(
-                onClick = { onChange((value + 1).coerceIn(0, max)) },
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(Icons.Outlined.Add, contentDescription = "Increase $label", modifier = Modifier.size(16.dp))
-            }
-        }
     }
 }

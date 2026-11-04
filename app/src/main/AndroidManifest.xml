@@ -27,22 +27,10 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
-            <!-- Compatible with sessions sent by the standalone Allies app. -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="studyplanner" android:host="session" />
-            </intent-filter>
         </activity>
 
         <receiver
             android:name=".notify.PlanAlarmReceiver"
-            android:exported="false" />
-
-        <receiver
-            android:name=".notify.FocusAlarmReceiver"
             android:exported="false" />
 
         <receiver

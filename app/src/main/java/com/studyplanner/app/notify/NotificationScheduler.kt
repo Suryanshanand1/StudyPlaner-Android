@@ -20,9 +20,8 @@ import com.studyplanner.app.util.Dates
 
 object NotificationScheduler {
     const val CHANNEL_REMINDERS = "study_reminders"
-    const val CHANNEL_TIMER = "focus_timer"
-    const val FOCUS_ALARM_CODE = 5201
 
+    private const val LEGACY_CHANNEL_TIMER = "focus_timer"
     private const val PREFS = "scheduled_plan_alarms"
     private const val KEY_IDS = "plan_ids"
 
@@ -38,17 +37,9 @@ object NotificationScheduler {
             enableVibration(true)
         }
 
-        val timer = NotificationChannel(
-            CHANNEL_TIMER,
-            context.getString(R.string.notification_channel_timer),
-            NotificationManager.IMPORTANCE_HIGH,
-        ).apply {
-            description = "Alarm when a focus timer finishes"
-            enableVibration(true)
-        }
-
         manager.createNotificationChannel(reminders)
-        manager.createNotificationChannel(timer)
+        // The countdown timer is gone, so remove its channel from older installs.
+        manager.deleteNotificationChannel(LEGACY_CHANNEL_TIMER)
     }
 
     fun syncPlans(context: Context, plans: List<StudyPlanEntity>) {
@@ -99,36 +90,6 @@ object NotificationScheduler {
         )
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         alarmManager.cancel(pending)
-    }
-
-    fun scheduleFocusFinish(context: Context, delayMs: Long, label: String) {
-        if (delayMs <= 0) return
-        val intent = Intent(context, FocusAlarmReceiver::class.java).apply {
-            putExtra("label", label.ifBlank { "Focus session" })
-        }
-        val pending = PendingIntent.getBroadcast(
-            context,
-            FOCUS_ALARM_CODE,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        setAlarm(context, System.currentTimeMillis() + delayMs, pending)
-    }
-
-    fun cancelFocusFinish(context: Context) {
-        val intent = Intent(context, FocusAlarmReceiver::class.java)
-        val pending = PendingIntent.getBroadcast(
-            context,
-            FOCUS_ALARM_CODE,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        alarmManager.cancel(pending)
-    }
-
-    fun cancelFocusNotification(context: Context) {
-        NotificationManagerCompat.from(context).cancel(FOCUS_ALARM_CODE)
     }
 
     private fun setAlarm(context: Context, triggerAt: Long, pending: PendingIntent) {

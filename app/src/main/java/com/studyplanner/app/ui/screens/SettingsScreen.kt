@@ -466,8 +466,8 @@ fun SettingsScreen(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "All data stays on this device. The Allies timer is built in, and " +
-                        "studyplanner://session links from the standalone Allies app still work.",
+                    "All data stays on this device. The focus stopwatch is built in, " +
+                        "and no data is sent anywhere except the optional update check.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

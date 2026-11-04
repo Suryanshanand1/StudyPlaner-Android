@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.studyplanner.app.data.ChapterEntity
-import com.studyplanner.app.data.IncomingSession
 import com.studyplanner.app.data.SubjectEntity
 import com.studyplanner.app.ui.AppViewModel
 import com.studyplanner.app.util.Dates
@@ -167,100 +166,6 @@ fun QuickSubjectDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
-}
-
-@Composable
-fun IncomingSessionDialog(
-    viewModel: AppViewModel,
-    incoming: IncomingSession,
-    subjects: List<SubjectEntity>,
-    chapters: List<ChapterEntity>,
-    onDismiss: () -> Unit,
-) {
-    var subjectId by remember { mutableStateOf("") }
-    var chapterId by remember { mutableStateOf("") }
-    var quickAdd by remember { mutableStateOf(false) }
-
-    val subjectOptions = buildList {
-        add("" to "No subject (save label only)")
-        subjects.forEach { add(it.id to it.name) }
-    }
-    val chapterOptions = chapters
-        .filter { it.subjectId == subjectId }
-        .sortedBy { it.order }
-        .map { it.id to it.name }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Session from Allies") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text(
-                    "${incoming.label} · ${Dates.formatDate(incoming.date)} · " +
-                        "${Dates.formatTime(incoming.startTime)}–${Dates.formatTime(incoming.endTime)}" +
-                        if (incoming.minutes > 0) " (${incoming.minutes} min)" else "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(16.dp))
-                DropdownField(
-                    label = "Subject",
-                    selectedLabel = subjects.firstOrNull { it.id == subjectId }?.name ?: "",
-                    options = subjectOptions,
-                    onSelected = {
-                        subjectId = it
-                        chapterId = ""
-                    },
-                    placeholder = "No subject",
-                )
-                if (subjectId.isNotBlank()) {
-                    Spacer(Modifier.height(12.dp))
-                    DropdownField(
-                        label = "Chapter",
-                        selectedLabel = chapterOptions.firstOrNull { it.first == chapterId }?.second ?: "",
-                        options = chapterOptions,
-                        onSelected = { chapterId = it },
-                        placeholder = if (chapterOptions.isEmpty()) "No chapters yet" else "Select chapter",
-                    )
-                    if (chapterOptions.isEmpty()) {
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            "This subject has no chapters. You can save it with the label only.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                TextButton(onClick = { quickAdd = true }) {
-                    Icon(Icons.Outlined.Add, contentDescription = null)
-                    Text("Quick add subject")
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    viewModel.saveIncomingSession(incoming, subjectId, chapterId) { onDismiss() }
-                },
-            ) { Text("Save as confirmed") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Discard") }
-        },
-    )
-
-    if (quickAdd) {
-        QuickSubjectDialog(
-            viewModel = viewModel,
-            onDismiss = { quickAdd = false },
-            onCreated = { sid, cid ->
-                subjectId = sid
-                chapterId = cid
-                quickAdd = false
-            },
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

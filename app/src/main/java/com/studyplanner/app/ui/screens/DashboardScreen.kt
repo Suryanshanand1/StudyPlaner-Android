@@ -21,7 +21,7 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SystemUpdate
-import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Watch
 import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -245,7 +245,7 @@ fun DashboardScreen(
             StudyCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        Icons.Outlined.Timer,
+                        Icons.Outlined.Watch,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp),
@@ -253,11 +253,11 @@ fun DashboardScreen(
                     Spacer(Modifier.size(10.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
-                            "Focus with Allies",
+                            "Focus with the stopwatch",
                             style = MaterialTheme.typography.titleMedium,
                         )
                         Text(
-                            "Timer or stopwatch. Saved sessions count toward your streak.",
+                            "Time any study session. Saved sessions count toward your streak.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
