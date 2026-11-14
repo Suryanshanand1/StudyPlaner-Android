@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Open book -->
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M22,69 C32,65 44,64 54,68 L54,88 C44,84 32,85 22,89 Z" />
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M86,69 C76,65 64,64 54,68 L54,88 C64,84 76,85 86,89 Z" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,68 L54,88" />
+
+    <!-- Stopwatch ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:pathData="M38,42 A16,16 0 1 1 70,42 A16,16 0 1 1 38,42" />
+
+    <!-- Stopwatch crown -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,18 h8 a2,2 0 0 1 2,2 v5 h-12 v-5 a2,2 0 0 1 2,-2 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52,24 h4 v4 h-4 z" />
+
+    <!-- Clock hand -->
+    <path
+        android:strokeColor="#3B82F6"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,42 L54,31" />
+
+    <!-- Center pin -->
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M51.5,42 a2.5,2.5 0 1 0 5,0 a2.5,2.5 0 1 0 -5,0" />
+</vector>

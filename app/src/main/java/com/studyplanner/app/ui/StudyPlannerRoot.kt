@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +44,9 @@ import com.studyplanner.app.ui.screens.SettingsScreen
 import com.studyplanner.app.ui.screens.SubjectsScreen
 import kotlinx.coroutines.launch
 
+const val EXTRA_OPEN_TAB = "com.studyplanner.app.extra.OPEN_TAB"
+const val TAB_FOCUS = "focus"
+
 enum class AppTab(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Outlined.Home),
     SUBJECTS("Subjects", Icons.AutoMirrored.Outlined.MenuBook),
@@ -53,11 +57,25 @@ enum class AppTab(val label: String, val icon: ImageVector) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StudyPlannerRoot(viewModel: AppViewModel) {
+fun StudyPlannerRoot(
+    viewModel: AppViewModel,
+    requestedTab: String? = null,
+    onTabConsumed: () -> Unit = {},
+) {
     var tab by rememberSaveable { mutableStateOf(AppTab.HOME) }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(requestedTab) {
+        when (requestedTab) {
+            TAB_FOCUS -> {
+                tab = AppTab.FOCUS
+                settingsOpen = false
+                onTabConsumed()
+            }
+        }
+    }
 
     fun showMessage(message: String) {
         scope.launch { snackbarHostState.showSnackbar(message) }

@@ -2,4 +2,25 @@
 <resources>
     <string name="app_name">Study Planner</string>
     <string name="notification_channel_reminders">Study reminders</string>
+
+    <string name="focus_channel_name">Focus session</string>
+    <string name="focus_channel_description">Ongoing stopwatch with pause and stop controls</string>
+    <string name="focus_status_studying">Studying</string>
+    <string name="focus_status_paused">Paused</string>
+    <string name="focus_notification_pause">Pause</string>
+    <string name="focus_notification_resume">Resume</string>
+    <string name="focus_notification_stop">Stop</string>
+    <string name="focus_saved_toast">Session saved: %1$s</string>
+    <string name="focus_discarded_toast">Under 1 minute — session discarded</string>
+
+    <string name="widget_name">Focus stopwatch</string>
+    <string name="widget_description">Start, pause, or stop a focus session from your home screen.</string>
+    <string name="widget_zero_time">00:00:00</string>
+    <string name="widget_idle">Ready to focus</string>
+    <string name="widget_studying">Studying</string>
+    <string name="widget_paused">Paused</string>
+    <string name="widget_start">Start focus</string>
+    <string name="widget_pause">Pause</string>
+    <string name="widget_resume">Resume</string>
+    <string name="widget_stop">Stop</string>
 </resources>

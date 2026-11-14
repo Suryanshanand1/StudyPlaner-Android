@@ -5,13 +5,17 @@ chapter tracking, day/week planning, streaks, and monthly analytics in one app w
 Kotlin with Jetpack Compose and Material 3. All data stays on the device.
 
 - **Package:** `com.studyplanner.app`
-- **Version:** 2.1.0 (versionCode 9)
+- **Version:** 2.2.0 (versionCode 10)
 - **Android:** minSdk 26, compile/targetSdk 36
 
 ## Features
 
 - **Focus stopwatch** — an open-ended stopwatch to time any study session, with
   start, pause/resume, discard, and save.
+- **Active-session notification** — an ongoing notification shows the live timer and lets
+  you pause, resume, or stop the session without reopening the app.
+- **Home-screen widget** — a distraction-free focus widget that starts, pauses, resumes,
+  and stops a session right from the home screen.
 - **Subjects and chapters** — create, edit, delete, reorder, and complete chapters, with
   per-subject progress and colors.
 - **Day/week planner** — schedule study sessions in day or week views, with quick
@@ -44,8 +48,22 @@ Kotlin with Jetpack Compose and Material 3. All data stays on the device.
 The stopwatch keeps accurate time even if the app is closed, because elapsed time is
 derived from wall-clock timestamps and persisted in `SharedPreferences`.
 
-> Version 2.1.0 uses the stopwatch only. The countdown timer and the
-> `studyplanner://session` Allies deep link were removed.
+### Controlling a session outside the app
+
+- **Ongoing notification** — while a session is active, a silent, ongoing notification
+  shows the running timer (a system chronometer when running, a fixed time when paused)
+  with **Pause**/**Resume** and **Stop** actions. Tapping the notification opens the app
+  on the Focus tab.
+- **Home-screen widget** — add the *Focus stopwatch* widget and control the session with
+  the same actions. The widget shows the elapsed time and updates itself whenever the
+  state changes from the app, the notification, or the widget.
+
+Both routes share one in-process session controller, so the app, widget, and notification
+always show the same state. Stopping from anywhere saves the session when it lasted at
+least one minute; shorter sessions are discarded with a toast.
+
+> Version 2.1.0 removed the countdown timer and the `studyplanner://session` Allies deep
+> link, and version 2.2.0 adds the focus widget and active-session notification.
 
 ## Build
 
@@ -100,8 +118,9 @@ in `app/build.gradle.kts` with your own keystore (or use
 app/src/main/java/com/studyplanner/app/
   MainActivity.kt              Activity and theme setup
   StudyPlannerApp.kt           Notification channel setup
-  data/                        Room entities/DAO/database, repository, settings
-  notify/                      AlarmManager scheduler and broadcast receivers
+  data/                        Room entities/DAO/database, repository, settings, focus session state
+  notify/                      AlarmManager scheduler, active-session notification, broadcast receivers
+  widget/                      Home-screen focus widget provider
   ui/                          ViewModel, root scaffold and screens
     components/                Reusable cards, dialogs, chart
     screens/                   Dashboard, Subjects, Planner, Focus, Analytics, Settings

@@ -9,9 +9,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.studyplanner.app.BuildConfig
 import com.studyplanner.app.data.ActiveSession
-import com.studyplanner.app.data.ActiveSessionStore
 import com.studyplanner.app.data.AppSettings
-import com.studyplanner.app.data.SessionState
+import com.studyplanner.app.data.FocusSessionManager
 import com.studyplanner.app.data.SettingsRepository
 import com.studyplanner.app.data.StudyDatabase
 import com.studyplanner.app.data.StudyRepository
@@ -19,7 +18,6 @@ import com.studyplanner.app.data.ThemeMode
 import com.studyplanner.app.data.UpdateChecker
 import com.studyplanner.app.data.UpdateInfo
 import com.studyplanner.app.notify.NotificationScheduler
-import com.studyplanner.app.util.Dates
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -31,15 +29,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.Instant
-import java.time.ZoneId
-import kotlin.math.roundToInt
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val app = application
     private val repository = StudyRepository(StudyDatabase.get(application), application)
     private val settingsRepository = SettingsRepository(application)
-    private val activeSessionStore = ActiveSessionStore(application)
     private val updatePrefs = application.getSharedPreferences(
         "study_planner_updates",
         Context.MODE_PRIVATE,
@@ -52,8 +46,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     val settings: StateFlow<AppSettings> = settingsRepository.settings
 
-    private val _activeSession = MutableStateFlow(activeSessionStore.load())
-    val activeSession: StateFlow<ActiveSession?> = _activeSession.asStateFlow()
+    val activeSession: StateFlow<ActiveSession?> = FocusSessionManager.session
 
     private val _now = MutableStateFlow(System.currentTimeMillis())
     val now: StateFlow<Long> = _now.asStateFlow()
@@ -74,16 +67,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         viewModelScope.launch {
-            _activeSession.collect { session ->
-                activeSessionStore.save(session)
-                updateTicker()
-            }
+            FocusSessionManager.session.collect { updateTicker() }
         }
         checkForUpdates()
     }
 
     private fun updateTicker() {
-        if (_activeSession.value?.isRunning == true) {
+        if (FocusSessionManager.session.value?.isRunning == true) {
             if (ticker?.isActive != true) {
                 ticker = viewModelScope.launch {
                     while (isActive) {
@@ -208,53 +198,29 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         chapterName: String,
         customLabel: String,
     ) {
-        val timestamp = System.currentTimeMillis()
-        val chapterLabel = when {
-            chapterName.isNotBlank() -> chapterName
-            customLabel.isNotBlank() -> customLabel
-            subjectName.isNotBlank() -> "Revision"
-            else -> "Focus session"
-        }
-        val session = ActiveSession(
+        FocusSessionManager.start(
             subjectId = subjectId,
             chapterId = chapterId,
             subjectName = subjectName,
-            chapterName = chapterLabel,
-            startedAt = timestamp,
-            segmentStartedAt = timestamp,
-            accumulatedMs = 0L,
-            state = SessionState.RUNNING,
+            chapterName = chapterName,
+            customLabel = customLabel,
         )
-        _now.value = timestamp
-        _activeSession.value = session
+        _now.value = System.currentTimeMillis()
         savedMessage.value = null
     }
 
     fun pauseFocusSession() {
-        val session = _activeSession.value ?: return
-        if (!session.isRunning) return
-        val timestamp = System.currentTimeMillis()
-        _activeSession.value = session.copy(
-            accumulatedMs = session.elapsed(timestamp),
-            segmentStartedAt = timestamp,
-            state = SessionState.PAUSED,
-        )
-        _now.value = timestamp
+        FocusSessionManager.pause()
+        _now.value = System.currentTimeMillis()
     }
 
     fun resumeFocusSession() {
-        val session = _activeSession.value ?: return
-        if (session.isRunning) return
-        val timestamp = System.currentTimeMillis()
-        _activeSession.value = session.copy(
-            segmentStartedAt = timestamp,
-            state = SessionState.RUNNING,
-        )
-        _now.value = timestamp
+        FocusSessionManager.resume()
+        _now.value = System.currentTimeMillis()
     }
 
     fun discardFocusSession() {
-        _activeSession.value = null
+        FocusSessionManager.discard()
     }
 
     /**
@@ -262,43 +228,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
      * Minimum duration is one minute, matching the web app.
      */
     fun saveFocusSession(onSaved: (String) -> Unit) {
-        val session = _activeSession.value ?: return
-        val timestamp = System.currentTimeMillis()
-        val elapsed = session.elapsed(timestamp)
-        if (elapsed < MIN_SAVE_MS) return
-
-        val start = Instant.ofEpochMilli(session.startedAt).atZone(ZoneId.systemDefault())
-        val end = Instant.ofEpochMilli(session.startedAt + elapsed).atZone(ZoneId.systemDefault())
-        val date = start.toLocalDate().toString()
-        val startTime = Dates.toTimeStr(start.toLocalDateTime())
-        val endTime = Dates.toTimeStr(end.toLocalDateTime())
-        val subjectName = session.subjectName.ifBlank { "Focus" }
-        val chapterName = session.chapterName.ifBlank {
-            session.subjectName.ifBlank { "Focus session" }
-        }
-        val minutes = (elapsed / 60_000.0).roundToInt().coerceAtLeast(1)
-
         viewModelScope.launch {
-            repository.addPlan(
-                subjectId = session.subjectId,
-                chapterId = session.chapterId,
-                subjectName = subjectName,
-                chapterName = chapterName,
-                date = date,
-                startTime = startTime,
-                endTime = endTime,
-                confirmed = true,
-                source = "focus",
-            )
-            repository.addFocusSession(
-                label = session.label,
-                date = date,
-                startTime = startTime,
-                endTime = endTime,
-                minutes = minutes,
-            )
-            _activeSession.value = null
-            val summary = "${session.label} (${Dates.durationLabel(elapsed)})"
+            val summary = FocusSessionManager.stopAndSave() ?: return@launch
             savedMessage.value = summary
             onSaved(summary)
         }
@@ -362,7 +293,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     companion object {
-        const val MIN_SAVE_MS = 60_000L
+        const val MIN_SAVE_MS = FocusSessionManager.MIN_SAVE_MS
         private const val KEY_UPDATE_CHECK = "last_check"
         private const val UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L
     }
