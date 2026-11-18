@@ -5,7 +5,7 @@ chapter tracking, day/week planning, streaks, and monthly analytics in one app w
 Kotlin with Jetpack Compose and Material 3. All data stays on the device.
 
 - **Package:** `com.studyplanner.app`
-- **Version:** 2.2.0 (versionCode 10)
+- **Version:** 2.3.0 (versionCode 11)
 - **Android:** minSdk 26, compile/targetSdk 36
 
 ## Features
@@ -34,6 +34,8 @@ Kotlin with Jetpack Compose and Material 3. All data stays on the device.
 - **Backups** — JSON export/import using the same schema as the original web app
   (`version`, `subjects`, `chapters`, `studyPlans`), plus native `focusSessions` and
   `exportedAt` fields.
+- **Deep Focus** — flip one switch on the Focus tab to add a full-screen strict mode, optional
+  focus sounds, and best-effort app/YouTube blocking to the same stopwatch.
 - **App updates** — checks GitHub releases once a day and shows an in-app update card
   when a newer version exists, plus a manual "Check for updates" in Settings.
 
@@ -63,7 +65,62 @@ always show the same state. Stopping from anywhere saves the session when it las
 least one minute; shorter sessions are discarded with a toast.
 
 > Version 2.1.0 removed the countdown timer and the `studyplanner://session` Allies deep
-> link, and version 2.2.0 adds the focus widget and active-session notification.
+> link, version 2.2.0 adds the focus widget and active-session notification, and version
+> 2.3.0 adds Deep Focus to the Focus tab.
+
+## Deep Focus
+
+**Deep Focus** is a switch at the top of the Focus tab. Leave it off for the plain stopwatch,
+or turn it on to add strict mode, focus sounds, and app blocking to the same session. The
+extra settings only appear while it is on, and flipping the switch during a live session
+applies or removes those effects immediately. Starting a session from Deep Focus is the same
+session shown in the history, the notification, and the widget.
+
+### Strict focus mode
+
+- **Strict focus screen** — a full-screen, distraction-free timer that blocks Back while a
+  session runs. It follows you across tabs and stays up until you end the session; pausing
+  keeps it up with a Resume button.
+- **Keep screen on** — prevents the display from sleeping during strict focus.
+- **Do Not Disturb** — silences notifications for the session and restores your previous
+  interruption filter when it ends. Requires notification-policy access, which the screen
+  can open for you.
+- **Confirm before stopping** — asks once before ending a session.
+
+Sessions shorter than one minute are still discarded, and longer ones are saved exactly
+like a normal focus session.
+
+### Focus sounds
+
+Three ambience loops ship with the app — *Nature with melody*, *Rain with calm music*, and
+*Rain* — so you can start a session without hunting for a file. You can also **import your
+own**: pick a rain loop, lo-fi track, or any local audio file with the system picker. The
+imported copy is stored in app storage, so it plays offline. A media-playback foreground
+service loops the sound and starts, pauses, resumes, and stops it along with the session.
+The volume is adjustable, and the sound can be swapped or removed at any time.
+
+> Bundling the three tracks adds about 23 MB to the APK. The import option remains if you
+> prefer to keep the download smaller.
+
+### App and YouTube blocking
+
+Blocking uses an Android **accessibility service** to notice which app is in the foreground
+during a session:
+
+- **Blocked apps** — pick any installed app; while a session is active it is replaced by a
+  Deep Focus block screen with **Return to study** and **Go to home screen**. Both leave the
+  blocked app, and Back returns to Study Planner.
+- **YouTube** — either block it entirely, or use *Study channels only*, which hides Shorts
+  and allows only the channel names you list.
+
+Blocking is a best-effort helper. YouTube changes its interface regularly, so the channel
+allowlist is inherently fragile — blocking the whole app is the reliable option. The
+accessibility service only reads which app/screen is open to enforce these rules; nothing is
+collected or shared, and blocking only applies while a session is running.
+
+> Deep Focus needs two system grants: **accessibility** for app blocking and
+> **notification policy access** for Do Not Disturb. The Focus tab shows a warning and a
+> shortcut whenever either is missing.
 
 ## Build
 
@@ -119,11 +176,12 @@ app/src/main/java/com/studyplanner/app/
   MainActivity.kt              Activity and theme setup
   StudyPlannerApp.kt           Notification channel setup
   data/                        Room entities/DAO/database, repository, settings, focus session state
+  focus/                       Deep Focus: session effects, sound service, accessibility blocker, block screen
   notify/                      AlarmManager scheduler, active-session notification, broadcast receivers
   widget/                      Home-screen focus widget provider
   ui/                          ViewModel, root scaffold and screens
     components/                Reusable cards, dialogs, chart
-    screens/                   Dashboard, Subjects, Planner, Focus, Analytics, Settings
+    screens/                   Dashboard, Subjects, Planner, Focus (with Deep Focus sections), Analytics, Settings
     theme/                     Material 3 color schemes and typography
   util/                        Date, time and statistics helpers
 ```
@@ -134,6 +192,9 @@ app/src/main/java/com/studyplanner/app/
 - Preferences and the active stopwatch are stored in `SharedPreferences`.
 - No account is required and no study data leaves the device. The only network request
   is the optional GitHub release update check.
+- Deep Focus also stays on-device: the accessibility service only reports which app or
+  screen is in the foreground so chosen apps can be blocked, and imported focus sounds are
+  copied into app-private storage. Neither is uploaded anywhere.
 - Deleting a subject removes its chapters and plans. Importing a backup replaces all
   current data.
 

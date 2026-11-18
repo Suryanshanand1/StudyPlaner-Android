@@ -23,4 +23,20 @@
     <string name="widget_pause">Pause</string>
     <string name="widget_resume">Resume</string>
     <string name="widget_stop">Stop</string>
+
+    <string name="accessibility_service_label">Deep Focus app blocker</string>
+    <string name="accessibility_service_description">Detects which app is open during a Deep Focus session and shows a block screen for the apps you chose. Study Planner does not collect or share what you open.</string>
+
+    <string name="sound_channel_name">Focus sound</string>
+    <string name="sound_channel_description">Keeps your focus sound playing during a session</string>
+    <string name="sound_notification_title">Focus sound</string>
+    <string name="sound_notification_paused">Paused · %1$s</string>
+    <string name="sound_notification_stop">Stop sound</string>
+    <string name="sound_default_name">Focus sound</string>
+
+    <string name="block_title">Deep Focus is on</string>
+    <string name="block_message">%1$s is blocked while your focus session is active.</string>
+    <string name="block_return">Return to study</string>
+    <string name="block_home">Go to home screen</string>
+    <string name="block_youtube_label">YouTube</string>
 </resources>

@@ -2,6 +2,7 @@ package com.studyplanner.app.data
 
 import android.annotation.SuppressLint
 import android.content.Context
+import com.studyplanner.app.focus.DeepFocusManager
 import com.studyplanner.app.notify.FocusNotification
 import com.studyplanner.app.util.Dates
 import com.studyplanner.app.widget.FocusWidgetProvider
@@ -46,6 +47,12 @@ object FocusSessionManager {
             initialized = true
         }
         publish(_session.value)
+        // A running session restored after a process restart should bring its sound and
+        // DND state back with it, so treat it as a fresh start for Deep Focus.
+        val restored = _session.value
+        if (restored != null) {
+            DeepFocusManager.onSessionChanged(appContext, null, restored)
+        }
     }
 
     fun start(
@@ -163,10 +170,12 @@ object FocusSessionManager {
     }
 
     private fun publish(session: ActiveSession?) {
+        val previous = _session.value
         store.save(session)
         _session.value = session
         FocusNotification.update(appContext, session)
         FocusWidgetProvider.updateAll(appContext, session)
+        DeepFocusManager.onSessionChanged(appContext, previous, session)
     }
 
     private fun ensureInitialized() {

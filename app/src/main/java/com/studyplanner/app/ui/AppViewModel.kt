@@ -2,6 +2,9 @@ package com.studyplanner.app.ui
 
 import android.app.Application
 import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
+import android.webkit.MimeTypeMap
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
@@ -17,6 +20,9 @@ import com.studyplanner.app.data.StudyRepository
 import com.studyplanner.app.data.ThemeMode
 import com.studyplanner.app.data.UpdateChecker
 import com.studyplanner.app.data.UpdateInfo
+import com.studyplanner.app.data.YouTubeMode
+import com.studyplanner.app.focus.DndController
+import com.studyplanner.app.focus.FocusSoundService
 import com.studyplanner.app.notify.NotificationScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,11 +35,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val app = application
     private val repository = StudyRepository(StudyDatabase.get(application), application)
-    private val settingsRepository = SettingsRepository(application)
+    private val settingsRepository = SettingsRepository.get(application)
     private val updatePrefs = application.getSharedPreferences(
         "study_planner_updates",
         Context.MODE_PRIVATE,
@@ -98,6 +105,130 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun setTheme(mode: ThemeMode) = settingsRepository.setTheme(mode)
 
     fun setAccent(color: String) = settingsRepository.setAccent(color)
+
+    // ----- Deep Focus -----
+
+    /**
+     * Turns the Focus tab into Deep Focus. While it is on, the strict overlay, focus sounds,
+     * and app blocking follow the live session. Toggling it mid-session applies or removes
+     * those effects right away.
+     */
+    fun setDeepFocusMode(enabled: Boolean) {
+        settingsRepository.setDeepFocusMode(enabled)
+        val session = FocusSessionManager.current ?: return
+        val settings = settingsRepository.settings.value
+        if (enabled) {
+            if (settings.deepFocusDnd) DndController.enable(app)
+            if (session.isRunning) FocusSoundService.start(app)
+        } else {
+            FocusSoundService.stop(app)
+            DndController.disable(app)
+        }
+    }
+
+    fun setDeepFocusStrict(enabled: Boolean) = settingsRepository.setDeepFocusStrict(enabled)
+
+    fun setKeepScreenOn(enabled: Boolean) = settingsRepository.setKeepScreenOn(enabled)
+
+    fun setDnd(enabled: Boolean) {
+        settingsRepository.setDnd(enabled)
+        if (FocusSessionManager.current != null && settingsRepository.settings.value.deepFocusMode) {
+            if (enabled) DndController.enable(app) else DndController.disable(app)
+        }
+    }
+
+    fun setConfirmStop(enabled: Boolean) = settingsRepository.setConfirmStop(enabled)
+
+    fun setBlockingEnabled(enabled: Boolean) = settingsRepository.setBlockingEnabled(enabled)
+
+    fun toggleBlockedPackage(packageName: String) =
+        settingsRepository.toggleBlockedPackage(packageName)
+
+    fun clearBlockedPackages() = settingsRepository.setBlockedPackages(emptySet())
+
+    fun setYoutubeMode(mode: YouTubeMode) = settingsRepository.setYoutubeMode(mode)
+
+    fun addYoutubeChannel(name: String) = settingsRepository.addYoutubeChannel(name)
+
+    fun removeYoutubeChannel(name: String) = settingsRepository.removeYoutubeChannel(name)
+
+    fun setSoundEnabled(enabled: Boolean) {
+        settingsRepository.setSoundEnabled(enabled)
+        when {
+            !enabled -> FocusSoundService.stop(app)
+            FocusSessionManager.current?.isRunning == true &&
+                settingsRepository.settings.value.deepFocusMode -> FocusSoundService.start(app)
+        }
+    }
+
+    fun setSoundVolume(value: Float) {
+        settingsRepository.setSoundVolume(value)
+        FocusSoundService.updateVolume(app, value)
+    }
+
+    fun removeFocusSound() {
+        settingsRepository.setSound(null, null)
+        FocusSoundService.stop(app)
+    }
+
+    /** Picks one of the bundled sounds, replacing any imported file. */
+    fun selectBuiltinSound(id: String?) {
+        settingsRepository.setBuiltinSound(id)
+        when {
+            id == null -> FocusSoundService.stop(app)
+            FocusSessionManager.current?.isRunning == true &&
+                settingsRepository.settings.value.soundEnabled -> FocusSoundService.start(app)
+        }
+    }
+
+    /**
+     * Copies a user-picked audio file into app storage. The imported copy is what the
+     * service plays, so the sound keeps working offline and after the document is removed.
+     */
+    fun importFocusSound(uri: Uri, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val imported = withContext(Dispatchers.IO) {
+                runCatching {
+                    val resolver = app.contentResolver
+                    val displayName = resolver.query(
+                        uri,
+                        arrayOf(OpenableColumns.DISPLAY_NAME),
+                        null,
+                        null,
+                        null,
+                    )?.use { cursor ->
+                        if (cursor.moveToFirst()) cursor.getString(0) else null
+                    }
+                    val mime = resolver.getType(uri)
+                    val extension = displayName
+                        ?.substringAfterLast('.', "")
+                        ?.takeIf { it.length in 1..5 }
+                        ?: mime?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }
+                        ?: "audio"
+
+                    val directory = File(app.filesDir, "focus_sounds").apply { mkdirs() }
+                    directory.listFiles()?.forEach { it.delete() }
+                    val target = File(directory, "focus_sound.$extension")
+                    resolver.openInputStream(uri)?.use { input ->
+                        target.outputStream().use { output -> input.copyTo(output) }
+                    } ?: return@runCatching null
+                    if (target.length() == 0L) return@runCatching null
+
+                    target.absolutePath to (displayName ?: "Focus sound")
+                }.getOrNull()
+            }
+
+            if (imported == null) {
+                onResult(false)
+                return@launch
+            }
+            settingsRepository.setSound(imported.first, imported.second)
+            if (FocusSessionManager.current?.isRunning == true) {
+                FocusSoundService.start(app)
+            }
+            onResult(true)
+        }
+    }
 
     // ----- Subjects & chapters -----
 

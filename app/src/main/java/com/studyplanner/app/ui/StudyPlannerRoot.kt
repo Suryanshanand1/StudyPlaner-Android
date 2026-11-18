@@ -36,18 +36,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.studyplanner.app.ui.screens.AnalyticsScreen
 import com.studyplanner.app.ui.screens.DashboardScreen
 import com.studyplanner.app.ui.screens.FocusScreen
 import com.studyplanner.app.ui.screens.PlannerScreen
 import com.studyplanner.app.ui.screens.SettingsScreen
+import com.studyplanner.app.ui.screens.StrictFocusOverlay
 import com.studyplanner.app.ui.screens.SubjectsScreen
 import kotlinx.coroutines.launch
 
 const val EXTRA_OPEN_TAB = "com.studyplanner.app.extra.OPEN_TAB"
 const val TAB_FOCUS = "focus"
 
-enum class AppTab(val label: String, val icon: ImageVector) {
+enum class AppTab(val label: String, val icon: ImageVector, val title: String = label) {
     HOME("Home", Icons.Outlined.Home),
     SUBJECTS("Subjects", Icons.AutoMirrored.Outlined.MenuBook),
     PLANNER("Planner", Icons.Outlined.CalendarMonth),
@@ -66,6 +68,9 @@ fun StudyPlannerRoot(
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val activeSession by viewModel.activeSession.collectAsStateWithLifecycle()
+    val now by viewModel.now.collectAsStateWithLifecycle()
 
     LaunchedEffect(requestedTab) {
         when (requestedTab) {
@@ -90,7 +95,7 @@ fun StudyPlannerRoot(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (settingsOpen) "Settings" else tab.label,
+                        text = if (settingsOpen) "Settings" else tab.title,
                         style = MaterialTheme.typography.titleLarge,
                     )
                 },
@@ -154,5 +159,28 @@ fun StudyPlannerRoot(
                 else -> AnalyticsScreen(viewModel)
             }
         }
+    }
+
+    val strictSession = activeSession
+    if (settings.deepFocusMode && settings.deepFocusStrict && strictSession != null) {
+        StrictFocusOverlay(
+            session = strictSession,
+            now = now,
+            keepScreenOn = settings.deepFocusKeepScreenOn,
+            confirmBeforeStop = settings.deepFocusConfirmStop,
+            onPause = viewModel::pauseFocusSession,
+            onResume = viewModel::resumeFocusSession,
+            onEnd = {
+                val elapsed = strictSession.elapsed(now)
+                if (elapsed >= AppViewModel.MIN_SAVE_MS) {
+                    viewModel.saveFocusSession { summary ->
+                        showMessage("Session saved: $summary")
+                    }
+                } else {
+                    viewModel.discardFocusSession()
+                    showMessage("Under 1 minute — session discarded")
+                }
+            },
+        )
     }
 }
