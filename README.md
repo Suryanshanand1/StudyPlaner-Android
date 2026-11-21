@@ -5,7 +5,7 @@ chapter tracking, day/week planning, streaks, and monthly analytics in one app w
 Kotlin with Jetpack Compose and Material 3. All data stays on the device.
 
 - **Package:** `com.studyplanner.app`
-- **Version:** 2.3.0 (versionCode 11)
+- **Version:** 2.3.1 (versionCode 12)
 - **Android:** minSdk 26, compile/targetSdk 36
 
 ## Features
@@ -65,8 +65,9 @@ always show the same state. Stopping from anywhere saves the session when it las
 least one minute; shorter sessions are discarded with a toast.
 
 > Version 2.1.0 removed the countdown timer and the `studyplanner://session` Allies deep
-> link, version 2.2.0 adds the focus widget and active-session notification, and version
-> 2.3.0 adds Deep Focus to the Focus tab.
+> link, version 2.2.0 adds the focus widget and active-session notification, version 2.3.0
+> adds Deep Focus to the Focus tab, and version 2.3.1 keeps focus sounds playing under Do
+> Not Disturb and fixes YouTube study mode blocking the whole app.
 
 ## Deep Focus
 
@@ -82,9 +83,10 @@ session shown in the history, the notification, and the widget.
   session runs. It follows you across tabs and stays up until you end the session; pausing
   keeps it up with a Resume button.
 - **Keep screen on** — prevents the display from sleeping during strict focus.
-- **Do Not Disturb** — silences notifications for the session and restores your previous
-  interruption filter when it ends. Requires notification-policy access, which the screen
-  can open for you.
+- **Do Not Disturb** - turns on Android's priority-only mode so calls and notifications stay
+  quiet for the session while media (including the focus sound) keeps playing. Your previous
+  interruption filter is restored when the session ends. Requires notification-policy access,
+  which the screen can open for you.
 - **Confirm before stopping** — asks once before ending a session.
 
 Sessions shorter than one minute are still discarded, and longer ones are saved exactly
@@ -110,8 +112,9 @@ during a session:
 - **Blocked apps** — pick any installed app; while a session is active it is replaced by a
   Deep Focus block screen with **Return to study** and **Go to home screen**. Both leave the
   blocked app, and Back returns to Study Planner.
-- **YouTube** — either block it entirely, or use *Study channels only*, which hides Shorts
-  and allows only the channel names you list.
+- **YouTube** - either block it entirely, or use *Study channels only*, which blocks Shorts and
+  videos from channels you have not listed while leaving home, search, and subscriptions
+  usable. With no channels added, study mode blocks the whole app.
 
 Blocking is a best-effort helper. YouTube changes its interface regularly, so the channel
 allowlist is inherently fragile — blocking the whole app is the reliable option. The

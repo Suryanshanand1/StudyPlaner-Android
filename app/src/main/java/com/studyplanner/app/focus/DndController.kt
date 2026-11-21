@@ -23,7 +23,10 @@ object DndController {
             repository.savedInterruptionFilter = manager.currentInterruptionFilter
         }
         runCatching {
-            manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
+            // Priority-only silences calls and notifications but keeps media playing, so the
+            // focus sound survives. INTERRUPTION_FILTER_NONE ("total silence") would mute the
+            // media stream too and kill the built-in ambience.
+            manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
         }
     }
 

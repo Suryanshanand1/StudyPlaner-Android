@@ -132,7 +132,7 @@ internal fun StrictModeCard(
         HorizontalDivider(Modifier.padding(vertical = 10.dp))
         SwitchRow(
             title = "Do Not Disturb",
-            subtitle = "Silence notifications until the session ends",
+            subtitle = "Mute notifications, not your focus sound",
             checked = settings.deepFocusDnd,
             onCheckedChange = onDndChange,
         )
@@ -429,7 +429,7 @@ internal fun YouTubeCard(
         )
         RadioRow(
             title = "Study channels only",
-            subtitle = "Hides Shorts and allows only the channels below",
+            subtitle = "Blocks Shorts and other channels, keeps browsing usable",
             selected = settings.youtubeMode == YouTubeMode.STUDY_CHANNELS,
             onClick = { onModeChange(YouTubeMode.STUDY_CHANNELS) },
         )
